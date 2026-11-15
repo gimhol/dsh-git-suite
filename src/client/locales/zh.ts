@@ -182,6 +182,7 @@ export const zh: Record<LocaleKey, string> = {
   openTerminal: '在命令行中打开仓库',
   openInEditor: '在编辑器中打开',
   openInEditorName: '在{name}中打开',
+  openEditorFailed: '无法启动 {name}（{detail}），请确认该编辑器已完整安装。',
   fileExplorer: '文件资源管理器',
   finder: '访达',
   fileManager: '文件管理器',

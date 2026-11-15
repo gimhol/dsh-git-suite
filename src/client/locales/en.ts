@@ -180,6 +180,7 @@ export const en = {
   openTerminal: 'Open a terminal at the repository',
   openInEditor: 'Open in editor',
   openInEditorName: 'Open in {name}',
+  openEditorFailed: 'Could not start {name} ({detail}). Check that the editor is installed correctly.',
   fileExplorer: 'File Explorer',
   finder: 'Finder',
   fileManager: 'File Manager',

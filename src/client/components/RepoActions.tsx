@@ -2,7 +2,7 @@ import type * as React from 'react'
 import { h, useCallback, useEffect, useState } from '../runtime.js'
 import type { GitLogView } from '../hooks/useGitLogView.js'
 import type { WorkspaceView } from '../hooks/useWorkspace.js'
-import { requestApps, requestOpenApp, toApiError } from '../lib/api.js'
+import { requestApps, requestOpenApp, toApiError, type ErrorDetails } from '../lib/api.js'
 import { fileManagerName } from '../lib/platform.js'
 import type { ViewMode } from '../lib/ui-state.js'
 import type { Translate } from '../types.js'
@@ -13,6 +13,15 @@ import { EditorGlyph } from './EditorIcons.js'
 import { FetchDialog } from './FetchDialog.js'
 import { PushDialog } from './PushDialog.js'
 import { SyncDialog } from './SyncDialog.js'
+import { toast } from './Toast.js'
+
+/** `exit 3221225477` / `spawn ENOENT`, the diagnostic a failed launch reports. */
+function launchDetail(details: ErrorDetails | undefined): string {
+  if (typeof details?.detail === 'string' && details.detail !== '') return details.detail
+  if (typeof details?.exitCode === 'number') return `exit ${String(details.exitCode)}`
+  if (typeof details?.spawnCode === 'string') return `spawn ${details.spawnCode}`
+  return 'error'
+}
 
 export interface RepoActionsProps {
   view: GitLogView
@@ -30,7 +39,7 @@ export function RepoActions({ view, ws, mode, onModeChange, t }: RepoActionsProp
   const [pullOpen, setPullOpen] = useState(false)
   const [fetchOpen, setFetchOpen] = useState(false)
   const [pushOpen, setPushOpen] = useState(false)
-  const [openError, setOpenError] = useState<string | null>(null)
+  const [busyEditor, setBusyEditor] = useState<string | null>(null)
   const [editors, setEditors] = useState<Array<{ id: string; name: string }>>([])
 
   const reloadEditors = useCallback((signal?: AbortSignal): void => {
@@ -53,14 +62,24 @@ export function RepoActions({ view, ws, mode, onModeChange, t }: RepoActionsProp
     return () => controller.abort()
   }, [reloadEditors, view.repo?.repoRoot])
 
-  const openEditor = async (id: string): Promise<void> => {
-    if (path === '' || id === '') return
-    setOpenError(null)
+  // The button stays disabled until the host answers: a launch that fails is
+  // reported here, because the editor's own window never appears to explain it.
+  const openEditor = async (editor: { id: string; name: string }): Promise<void> => {
+    if (path === '' || editor.id === '') return
+    setBusyEditor(editor.id)
     try {
-      await requestOpenApp({ path, target: 'editor', editor: id })
+      await requestOpenApp({ path, target: 'editor', editor: editor.id })
     } catch (error) {
       void reloadEditors()
-      setOpenError(toApiError(error).message)
+      const failure = toApiError(error)
+      toast(
+        failure.code === 'launch-failed'
+          ? t('openEditorFailed').replace('{name}', editor.name).replace('{detail}', launchDetail(failure.details))
+          : failure.message,
+        'error',
+      )
+    } finally {
+      setBusyEditor(null)
     }
   }
 
@@ -73,11 +92,10 @@ export function RepoActions({ view, ws, mode, onModeChange, t }: RepoActionsProp
 
   const openApp = async (target: 'terminal' | 'explorer'): Promise<void> => {
     if (path === '') return
-    setOpenError(null)
     try {
       await requestOpenApp({ path, target })
     } catch (error) {
-      setOpenError(toApiError(error).message)
+      toast(toApiError(error).message, 'error')
     }
   }
 
@@ -144,15 +162,14 @@ export function RepoActions({ view, ws, mode, onModeChange, t }: RepoActionsProp
           key={editor.id}
           variant="ghost"
           iconOnly
-          title={t('openInEditorName').replace('{name}', editor.name)}
+          title={busyEditor === editor.id ? t('opening') : t('openInEditorName').replace('{name}', editor.name)}
           icon={<EditorGlyph id={editor.id} />}
-          disabled={path === ''}
-          onClick={() => { void openEditor(editor.id) }}
+          disabled={path === '' || busyEditor !== null}
+          onClick={() => { void openEditor(editor) }}
         />
       ))}
       {ws.syncNote !== null ? <p className="dsh-gitlog-note" role="status">{ws.syncNote}</p> : null}
       {ws.syncError !== null ? <p className="dsh-gitlog-note" role="alert">{ws.syncError.message}</p> : null}
-      {openError === null ? null : <p className="dsh-gitlog-note" role="alert">{openError}</p>}
       {pullOpen
         ? (
             <SyncDialog

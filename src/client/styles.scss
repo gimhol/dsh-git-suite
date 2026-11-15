@@ -2892,20 +2892,8 @@ $brand: var(--dsw-alias-brand-primary);
     grid-template-rows: var(--gitlog-tree-h, 220px) 6px minmax(0, 1fr);
   }
 
-  .dsh-gitlog-commit-author,
-  .dsh-gitlog-commit-hash,
-  .dsh-gitlog-col-author,
-  .dsh-gitlog-col-hash,
-  .dsh-gitlog-col-resizer,
-  .dsh-gitlog-desc > .dsh-gitlog-refs {
-    display: none;
-  }
-
-  .dsh-gitlog-commit,
-  .dsh-gitlog-commit-header {
-    gap: 6px;
-    padding-right: 10px;
-  }
+  // Commit rows and columns use the same component and container-width rules
+  // as the full page; do not hide columns only because this is the sidebar.
 
   .dsh-gitlog-field.project,
   .dsh-gitlog-field.branch {

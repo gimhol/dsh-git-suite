@@ -1,10 +1,10 @@
-import { spawn } from 'node:child_process'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { RouteError } from './errors.js'
 import { admitHeaders, failure, json } from './http.js'
 import { resolveRepository } from './repository.js'
 import type { RouteContext } from './types.js'
-import { launchEditor } from './editors.js'
+import { editorName, launchEditor } from './editors.js'
+import { spawnDetached, type LaunchOutcome } from './launch.js'
 import { findCodeExecutable, findMacApp } from './vscode.js'
 
 interface OpenBody {
@@ -48,19 +48,24 @@ async function send(res: ServerResponse, response: Response): Promise<void> {
   res.end(Buffer.from(await response.arrayBuffer()))
 }
 
-/** Open a terminal, the file manager, or VS Code at `root`; a launch failure is not fatal. */
-function launch(target: 'terminal' | 'explorer' | 'vscode', root: string): void {
+/**
+ * Open a terminal, the file manager, or VS Code at `root`. The result says
+ * whether anything actually started, so the panel can explain a dead button.
+ */
+async function openTarget(target: 'terminal' | 'explorer' | 'vscode', root: string): Promise<LaunchOutcome> {
   if (target === 'vscode') {
-    const options = { cwd: root, detached: true, stdio: 'ignore' as const, windowsHide: true }
     let command = 'code'
     let args = ['--new-window', root]
+    // Only the `code.cmd` shim needs its console window hidden; a GUI executable
+    // started hidden would come up without a window at all.
+    let windowsHide = false
     if (process.platform === 'win32') {
-      // Launching the `code.cmd` shim needs cmd.exe, which flashes a console
-      // window; the GUI executable opens the window directly.
       const executable = findCodeExecutable()
       if (executable === undefined) {
+        // The `code` shim is a `.cmd` file, so `start` has to run it through cmd.
         command = process.env.ComSpec ?? 'cmd.exe'
         args = ['/c', 'start', '', 'code', '--new-window', root]
+        windowsHide = true
       } else {
         command = executable
       }
@@ -70,16 +75,9 @@ function launch(target: 'terminal' | 'explorer' | 'vscode', root: string): void 
       command = 'open'
       args = app === undefined ? ['-a', 'Visual Studio Code', root] : ['-a', app, root]
     }
-    try {
-      const child = spawn(command, args, options)
-      child.on('error', () => {})
-      child.unref()
-    } catch {
-      // The editor may not be installed after all; the repository is still there.
-    }
-    return
+    return spawnDetached(command, args, { cwd: root, windowsHide })
   }
-  const options = { cwd: root, detached: true, stdio: 'ignore' as const, windowsHide: false }
+
   let command: string
   let args: string[]
   if (process.platform === 'win32') {
@@ -97,16 +95,18 @@ function launch(target: 'terminal' | 'explorer' | 'vscode', root: string): void 
     command = target === 'terminal' ? 'x-terminal-emulator' : 'xdg-open'
     args = target === 'terminal' ? [] : [root]
   }
-  try {
-    const child = spawn(command, args, options)
-    child.on('error', () => {})
-    child.unref()
-  } catch {
-    // The desktop may refuse to open a window; the repository is still there.
-  }
+  // `explorer.exe` exits non-zero even when the folder opened, so its code is
+  // not a verdict; a terminal launcher that never starts is still a failure.
+  return spawnDetached(command, args, { cwd: root, windowsHide: false, verifyExit: target !== 'explorer' })
 }
 
-/** POST /git-suite/open: open a terminal or the file manager at the repository root. */
+/** Describe a launch failure as `exit 1` or `spawn ENOENT` for the panel. */
+function launchDetail(outcome: LaunchOutcome): string {
+  if (outcome.exitCode !== undefined) return `exit ${String(outcome.exitCode)}`
+  return `spawn ${outcome.spawnCode ?? 'unknown'}`
+}
+
+/** POST /git-suite/open: open a terminal, the file manager, or an editor at the repository root. */
 export function createOpenHandler(context: RouteContext): (req: IncomingMessage, res: ServerResponse) => Promise<void> {
   return async (req, res) => {
     if (!admitHeaders(name => header(req, name))) {
@@ -138,13 +138,33 @@ export function createOpenHandler(context: RouteContext): (req: IncomingMessage,
       const repo = await resolveRepository(context, typeof body.path === 'string' ? body.path : '')
       if (target === 'editor') {
         if (editor === '') throw new RouteError(400, 'editor-required', 'Choose an editor.')
-        if (!(await launchEditor(editor, repo.root))) {
-          throw new RouteError(400, 'unknown-editor', 'That editor is not installed on this host.', { editor })
+        const result = await launchEditor(editor, repo.root)
+        if (!result.ok) {
+          if (result.reason === 'not-installed') {
+            throw new RouteError(400, 'unknown-editor', 'That editor is not installed on this host.', { editor })
+          }
+          const detail = launchDetail(result)
+          throw new RouteError(400, 'launch-failed', `Could not start ${editorName(editor)} (${detail}).`, {
+            editor,
+            target,
+            detail,
+            ...(result.spawnCode === undefined ? {} : { spawnCode: result.spawnCode }),
+            ...(result.exitCode === undefined ? {} : { exitCode: result.exitCode }),
+          })
         }
         await send(res, json({ ok: true, target, editor, path: repo.root }))
         return
       }
-      launch(target, repo.root)
+      const outcome = await openTarget(target, repo.root)
+      if (!outcome.ok) {
+        const detail = launchDetail(outcome)
+        throw new RouteError(400, 'launch-failed', `Could not open ${target} (${detail}).`, {
+          target,
+          detail,
+          ...(outcome.spawnCode === undefined ? {} : { spawnCode: outcome.spawnCode }),
+          ...(outcome.exitCode === undefined ? {} : { exitCode: outcome.exitCode }),
+        })
+      }
       await send(res, json({ ok: true, target, path: repo.root }))
     } catch (error) {
       await send(res, failure(error))

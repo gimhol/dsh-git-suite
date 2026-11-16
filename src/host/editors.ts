@@ -1,6 +1,6 @@
-import { spawn } from 'node:child_process'
 import { existsSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { spawnDetached } from './launch.js'
 import { readRegistryIndex, type RegistryIndex, type UninstallRecord } from './registry.js'
 
 /** One external editor the panel can open a repository in. */
@@ -320,20 +320,32 @@ export async function installedEditors(): Promise<InstalledEditor[]> {
   return out
 }
 
-/** Open `root` in one editor; an unknown id or a spawn failure is not fatal. */
-export async function launchEditor(id: string, root: string): Promise<boolean> {
+/** How a launch ended: opened, not installed, or nothing appeared. */
+export type LaunchResult =
+  | { ok: true }
+  | { ok: false; reason: 'not-installed' }
+  | { ok: false; reason: 'failed'; spawnCode?: string; exitCode?: number }
+
+/**
+ * Open `root` in one editor. The desktop is not asked to hide the window — that
+ * would suppress the editor's own window and make a working launch look dead —
+ * and a process that dies at once is reported instead of ignored.
+ */
+export async function launchEditor(id: string, root: string): Promise<LaunchResult> {
   const editor = (await installedEditors()).find(entry => entry.id === id)
-  if (editor === undefined) return false
-  const options = { cwd: root, detached: true, stdio: 'ignore' as const, windowsHide: true }
-  try {
-    const child = editor.kind === 'bundle'
-      ? spawn('open', ['-a', editor.launch, root], options)
-      : spawn(editor.launch, [root], options)
-    child.on('error', () => {})
-    child.unref()
-    return true
-  } catch {
-    return false
+  if (editor === undefined) return { ok: false, reason: 'not-installed' }
+  const bundle = editor.kind === 'bundle'
+  const outcome = await spawnDetached(
+    bundle ? 'open' : editor.launch,
+    bundle ? ['-a', editor.launch, root] : [root],
+    { cwd: root, windowsHide: false },
+  )
+  if (outcome.ok) return { ok: true }
+  return {
+    ok: false,
+    reason: 'failed',
+    ...(outcome.spawnCode === undefined ? {} : { spawnCode: outcome.spawnCode }),
+    ...(outcome.exitCode === undefined ? {} : { exitCode: outcome.exitCode }),
   }
 }
 

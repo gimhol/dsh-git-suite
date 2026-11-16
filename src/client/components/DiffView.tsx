@@ -236,13 +236,19 @@ export function DiffView({
         className={cls(`dsh-gitlog-diff-line is-${line.kind}${selected ? ' is-selected' : ''}`)}
         onContextMenu={selectable ? openMenu(row) : undefined}
       >
-        <span
-          className={cls('dsh-gitlog-diff-gutter')}
-          onPointerDown={selectable ? startSelect(row) : undefined}
-        >
-          <span className={cls('dsh-gitlog-diff-num')}>{line.oldLine ?? ''}</span>
-          <span className={cls('dsh-gitlog-diff-num')}>{line.newLine ?? ''}</span>
-        </span>
+        {/* Patch headers (`diff --git`, `@@ …`) span the row: a number column
+            there would paint an empty gutter band above the first numbered line. */}
+        {selectable
+          ? (
+              <span
+                className={cls('dsh-gitlog-diff-gutter')}
+                onPointerDown={startSelect(row)}
+              >
+                <span className={cls('dsh-gitlog-diff-num')}>{line.oldLine ?? ''}</span>
+                <span className={cls('dsh-gitlog-diff-num')}>{line.newLine ?? ''}</span>
+              </span>
+            )
+          : null}
         <DiffCode line={line} tokens={line.kind === 'del' ? tokensOf(line, 'old') : tokensOf(line, 'new')} />
         {line.kind === 'hunk' ? hunkButton(line.hunk) : null}
       </div>

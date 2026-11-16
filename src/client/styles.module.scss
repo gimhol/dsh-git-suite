@@ -2524,6 +2524,9 @@ $brand: var(--dsw-alias-brand-primary);
   &-workspace-body {
     display: grid;
     grid-template-columns: minmax(320px, 42%) minmax(0, 1fr);
+    // Without an explicit row track the implicit row is content-sized, so a long
+    // patch makes the grid taller than the pane and paints over the commit form.
+    grid-template-rows: minmax(0, 1fr);
     flex: 1 1 auto;
     min-height: 0;
   }
@@ -2588,6 +2591,7 @@ $brand: var(--dsw-alias-brand-primary);
     flex: 1 1 auto;
     flex-direction: column;
     min-height: 0;
+    overflow: hidden;
   }
 
   &-workspace-section-head {
@@ -2823,6 +2827,8 @@ $brand: var(--dsw-alias-brand-primary);
     flex-direction: column;
     min-width: 0;
     min-height: 0;
+    // The diff scrolls inside this pane; it must never paint over the commit form.
+    overflow: hidden;
     background: $bg-base;
   }
 
@@ -2851,6 +2857,9 @@ $brand: var(--dsw-alias-brand-primary);
 
   &-workspace-diff .dsh-gitlog-diff {
     flex: 1 1 auto;
+    // Fill the pane's body and scroll inside it; a content-sized box would grow
+    // past the pane and paint the patch over the commit form below.
+    height: 100%;
     min-height: 0;
     max-height: none;
     margin: 0;
@@ -2987,10 +2996,6 @@ $brand: var(--dsw-alias-brand-primary);
   .dsh-gitlog-workspace-section {
     min-height: 140px;
   }
-
-  .dsh-gitlog-workspace-diff {
-    min-height: 240px;
-  }
 }
 
 @keyframes dsh-gitlog-tooltip-in {
@@ -3061,10 +3066,6 @@ $brand: var(--dsw-alias-brand-primary);
 
   .#{$prefix}-workspace-section {
     min-height: 150px;
-  }
-
-  .#{$prefix}-workspace-diff {
-    min-height: 260px;
   }
 }
 

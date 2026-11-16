@@ -6,6 +6,8 @@ A Git suite plugin for DSH Web: history, branches, the refs tree, commit details
 
 ## Screenshots
 
+> Some screenshots may be outdated as the UI keeps evolving.
+
 **History**
 
 ![History](assets/readme-screenshot-0.png)

@@ -48,6 +48,12 @@ $brand: var(--dsw-alias-brand-primary);
   background: $bg-base;
   color: $label-primary;
 
+  // The panel root is focusable for keyboard scoping; it must not draw a ring.
+  &:focus,
+  &:focus-visible {
+    outline: none;
+  }
+
   * {
     box-sizing: border-box;
   }
@@ -356,6 +362,8 @@ $brand: var(--dsw-alias-brand-primary);
     @include control-surface(13px);
     cursor: pointer;
     white-space: nowrap;
+    // Labels are UI chrome, never text to select.
+    user-select: none;
     // Background/border/colour easing covers hover, press, and disabled states.
     transition: background-color .12s ease, border-color .12s ease, color .12s ease;
 
@@ -1651,6 +1659,7 @@ $brand: var(--dsw-alias-brand-primary);
     min-width: 0;
     height: $section-head-height;
     box-sizing: border-box;
+    user-select: none;
 
     h3 {
       flex: 0 0 auto;
@@ -2422,6 +2431,7 @@ $brand: var(--dsw-alias-brand-primary);
     align-items: center;
     gap: 10px;
     height: $section-head-height;
+    user-select: none;
     // Same 8px gutter as the refs-tree header and the history toolbar, so the
     // refresh button lands on the same edge in both pages.
     padding: 0 8px;
@@ -2684,6 +2694,8 @@ $brand: var(--dsw-alias-brand-primary);
     padding: 8px;
     border-bottom: 1px solid $border-l1;
     background: $bg-layer-1;
+    // The header and its action buttons are chrome, not selectable text.
+    user-select: none;
 
     h3 {
       margin: 0;
@@ -2712,6 +2724,12 @@ $brand: var(--dsw-alias-brand-primary);
     min-height: 0;
     overflow: auto;
     padding: 4px 8px 8px;
+
+    // Focusable so Ctrl/Cmd+A checks every file instead of selecting text.
+    &:focus-visible {
+      outline: 1px solid $brand;
+      outline-offset: -1px;
+    }
   }
 
   &-workspace-file {
@@ -2919,6 +2937,7 @@ $brand: var(--dsw-alias-brand-primary);
     flex: 0 0 auto;
     align-items: center;
     gap: 10px;
+    user-select: none;
     // Same 40px row and 8px gutter as the page header, so the toggle and the
     // refresh button have identical boxes on the same edge.
     height: $section-head-height;

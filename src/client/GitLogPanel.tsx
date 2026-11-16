@@ -99,6 +99,8 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
   /** Latest view/workspace objects for the conflict poll, which outlives one render. */
   const liveRefresh = useRef({ view, ws })
   liveRefresh.current = { view, ws }
+  /** Panel root, focused on plain clicks so Ctrl/Cmd+A stays inside the panel. */
+  const rootRef = useRef<HTMLDivElement | null>(null)
   const repoRoot = view.repo?.repoRoot ?? ''
   const [narrow, setNarrow] = useState(isNarrowViewport)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -790,7 +792,28 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
   )
 
   return (
-    <div className={cls('dsh-gitlog')}>
+    <div
+      ref={rootRef}
+      className={cls('dsh-gitlog')}
+      tabIndex={-1}
+      onPointerDown={event => {
+        // Keep keyboard focus inside the panel: a click on chrome or the diff
+        // would otherwise leave focus on <body> and let Ctrl/Cmd+A select the
+        // whole page. Real controls keep their own focus.
+        const target = event.target
+        if (!(target instanceof HTMLElement)) return
+        if (target.closest('input, textarea, select, button, a, [contenteditable="true"], [tabindex]') !== null) return
+        rootRef.current?.focus({ preventScroll: true })
+      }}
+      onKeyDown={event => {
+        // Ctrl/Cmd+A belongs to the panel while it has focus: never let it
+        // select the whole page. Text fields keep their native select-all.
+        if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'a') return
+        const target = event.target
+        if (target instanceof HTMLElement && target.closest('input, textarea, [contenteditable="true"]') !== null) return
+        event.preventDefault()
+      }}
+    >
       <style>{CSS}</style>
       <ToastHost />
       <TooltipHost />

@@ -95,7 +95,13 @@ async function readCommitResult(root: string, signal: AbortSignal, push: boolean
   let pushed = false
   if (push) {
     if (upstream === null) throw new RouteError(409, 'no-upstream', 'The current branch has no upstream to push to.')
-    await runGit(root, ['push'], signal)
+    // Push the upstream's remote branch explicitly: `git push` with the default
+    // `simple` mode fails when the upstream name differs from the local branch.
+    const slash = upstream.indexOf('/')
+    if (slash <= 0) throw new RouteError(409, 'no-upstream', 'The current branch has no upstream to push to.')
+    const remote = upstream.slice(0, slash)
+    const target = upstream.slice(slash + 1)
+    await runGit(root, ['push', remote, `HEAD:${target}`], signal)
     pushed = true
   }
   return { hash, shortHash, subject, branch, upstream, pushed }

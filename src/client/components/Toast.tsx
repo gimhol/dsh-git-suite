@@ -1,5 +1,6 @@
 import type * as React from 'react'
 import { h, useEffect, useState } from '../runtime.js'
+import { cls } from '../styles.js'
 
 export type ToastKind = 'info' | 'error'
 
@@ -51,7 +52,7 @@ export function ToastHost(): React.ReactElement | null {
   if (state === null) return null
   return (
     <div
-      className={`dsh-gitlog-toast${state.kind === 'error' ? ' is-error' : ''}`}
+      className={cls(`dsh-gitlog-toast${state.kind === 'error' ? ' is-error' : ''}`)}
       role="status"
     >
       {state.text}

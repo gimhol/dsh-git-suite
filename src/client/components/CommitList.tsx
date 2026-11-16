@@ -10,6 +10,7 @@ import { Dropdown, type DropdownOption } from './Dropdown.js'
 import { LoadingLine, useMinimumSpin } from './States.js'
 import { RefreshIcon } from './GitLogIcon.js'
 import { VirtualList } from './VirtualList.js'
+import { cls } from '../styles.js'
 
 interface ColumnWidths {
   graph: number
@@ -101,7 +102,7 @@ function ColumnResizer({ label, style, onStart, onDrag }: ColumnResizerProps): R
       aria-label={label}
       aria-orientation="vertical"
       {...tooltipProps(label)}
-      className={`dsh-gitlog-col-resizer${dragging ? ' is-dragging' : ''}`}
+      className={cls(`dsh-gitlog-col-resizer${dragging ? ' is-dragging' : ''}`)}
       style={style}
       onPointerDown={event => {
         if (event.button !== 0) return
@@ -289,11 +290,11 @@ export function CommitList({ view, t, onContextMenu, onRefContextMenu }: {
   ]
 
   return (
-    <section className="dsh-gitlog-list" aria-label={t('commits')} style={style}>
-      <div className="dsh-gitlog-list-header">
-        <div className="dsh-gitlog-history-toolbar">
+    <section className={cls('dsh-gitlog-list')} aria-label={t('commits')} style={style}>
+      <div className={cls('dsh-gitlog-list-header')}>
+        <div className={cls('dsh-gitlog-history-toolbar')}>
           <Dropdown
-            className="dsh-gitlog-history-branch"
+            className={cls('dsh-gitlog-history-branch')}
             value={branchValue}
             options={branchOptions}
             onChange={chooseBranch}
@@ -301,13 +302,13 @@ export function CommitList({ view, t, onContextMenu, onRefContextMenu }: {
             placeholder={view.branchLabel}
           />
           <Dropdown
-            className="dsh-gitlog-history-sort"
+            className={cls('dsh-gitlog-history-sort')}
             value={view.sort}
             options={sortOptions}
             onChange={value => view.setSort(value === 'topo' ? 'topo' : 'date')}
             ariaLabel={t('sortOrder')}
           />
-          <label className="dsh-gitlog-check dsh-gitlog-history-remotes">
+          <label className={cls('dsh-gitlog-check dsh-gitlog-history-remotes')}>
             <input
               type="checkbox"
               checked={view.showRemotes}
@@ -315,10 +316,10 @@ export function CommitList({ view, t, onContextMenu, onRefContextMenu }: {
             />
             {t('showRemoteBranches')}
           </label>
-          <span className="dsh-gitlog-history-spacer" />
+          <span className={cls('dsh-gitlog-history-spacer')} />
           <button
             type="button"
-            className="dsh-gitlog-history-refresh"
+            className={cls('dsh-gitlog-history-refresh')}
             aria-label={t('refresh')}
             {...tooltipProps(t('refresh'))}
             disabled={status === 'loading'}
@@ -328,17 +329,17 @@ export function CommitList({ view, t, onContextMenu, onRefContextMenu }: {
           </button>
         </div>
         <div
-          className="dsh-gitlog-commit-header"
+          className={cls('dsh-gitlog-commit-header')}
           onContextMenu={event => {
             event.preventDefault()
             setColumnsMenu({ x: event.clientX, y: event.clientY })
           }}
         >
-          {columns.graph ? <span className="dsh-gitlog-col dsh-gitlog-col-graph">{t('columnGraph')}</span> : null}
-          <span className="dsh-gitlog-col dsh-gitlog-col-description">{t('columnDescription')}</span>
-          {columns.date ? <span className="dsh-gitlog-col dsh-gitlog-col-date">{t('columnDate')}</span> : null}
-          {columns.author ? <span className="dsh-gitlog-col dsh-gitlog-col-author">{t('columnAuthor')}</span> : null}
-          {columns.hash ? <span className="dsh-gitlog-col dsh-gitlog-col-hash">{t('columnCommit')}</span> : null}
+          {columns.graph ? <span className={cls('dsh-gitlog-col dsh-gitlog-col-graph')}>{t('columnGraph')}</span> : null}
+          <span className={cls('dsh-gitlog-col dsh-gitlog-col-description')}>{t('columnDescription')}</span>
+          {columns.date ? <span className={cls('dsh-gitlog-col dsh-gitlog-col-date')}>{t('columnDate')}</span> : null}
+          {columns.author ? <span className={cls('dsh-gitlog-col dsh-gitlog-col-author')}>{t('columnAuthor')}</span> : null}
+          {columns.hash ? <span className={cls('dsh-gitlog-col dsh-gitlog-col-hash')}>{t('columnCommit')}</span> : null}
           {columns.graph
             ? (
                 <ColumnResizer
@@ -382,7 +383,7 @@ export function CommitList({ view, t, onContextMenu, onRefContextMenu }: {
         </div>
       </div>
       <VirtualList
-        className="dsh-gitlog-list-scroll"
+        className={cls('dsh-gitlog-list-scroll')}
         items={commits}
         rowHeight={COMMIT_ROW_HEIGHT}
         resetKey={commits[0]?.hash ?? ''}

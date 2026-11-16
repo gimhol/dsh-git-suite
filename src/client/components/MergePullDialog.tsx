@@ -8,6 +8,7 @@ import { Dropdown } from './Dropdown.js'
 import { PullChecksBadge } from './PullChecksBadge.js'
 import { PullApprovalBadges } from './PullApprovalBadges.js'
 import { PullReviewBadge } from './PullReviewBadge.js'
+import { cls } from '../styles.js'
 
 export interface MergePullDialogProps {
   view: PullsView
@@ -67,22 +68,22 @@ export function MergePullDialog({ view, pull, t, onClose }: MergePullDialogProps
 
   return (
     <DialogShell title={t('pullMergeTitle')} t={t} onClose={onClose}>
-      <div className="dsh-gitlog-pull-merge">
-        <p className="dsh-gitlog-note">{`${repo === '' ? '' : `${repo} · `}#${pull.number} · ${pull.title}`}</p>
-        <div className="dsh-gitlog-pull-merge-meta">
+      <div className={cls('dsh-gitlog-pull-merge')}>
+        <p className={cls('dsh-gitlog-note')}>{`${repo === '' ? '' : `${repo} · `}#${pull.number} · ${pull.title}`}</p>
+        <div className={cls('dsh-gitlog-pull-merge-meta')}>
           <PullChecksBadge checks={current.checks} t={t} />
           <PullReviewBadge review={current.review ?? null} t={t} />
           {current.approval === undefined || current.approval === null
             ? null
             : <PullApprovalBadges approval={current.approval} t={t} />}
-          {blocked ? <span className="dsh-gitlog-pull-merge-warning">{t('pullMergeBlocked')}</span> : null}
-          {failing ? <span className="dsh-gitlog-pull-merge-warning">{t('pullMergeChecksFailing')}</span> : null}
+          {blocked ? <span className={cls('dsh-gitlog-pull-merge-warning')}>{t('pullMergeBlocked')}</span> : null}
+          {failing ? <span className={cls('dsh-gitlog-pull-merge-warning')}>{t('pullMergeChecksFailing')}</span> : null}
         </div>
         {provider === 'gitee'
           ? (
-              <div className="dsh-gitlog-merge-approvals">
-                <p className="dsh-gitlog-field-hint">{t('pullGiteeApprovalsHint')}</p>
-                <div className="dsh-gitlog-merge-approval-actions">
+              <div className={cls('dsh-gitlog-merge-approvals')}>
+                <p className={cls('dsh-gitlog-field-hint')}>{t('pullGiteeApprovalsHint')}</p>
+                <div className={cls('dsh-gitlog-merge-approval-actions')}>
                   <Button
                     loading={view.giteeDecision === 'review'}
                     disabled={approvalBusy}
@@ -100,14 +101,14 @@ export function MergePullDialog({ view, pull, t, onClose }: MergePullDialogProps
                 </div>
                 {approvalError === null
                   ? null
-                  : <p className="dsh-gitlog-note" role="alert">{approvalError}</p>}
+                  : <p className={cls('dsh-gitlog-note')} role="alert">{approvalError}</p>}
                 {view.giteeDecision === null
                   ? null
-                  : <p className="dsh-gitlog-field-hint">{t('pullGiteeApprovalRunning')}</p>}
+                  : <p className={cls('dsh-gitlog-field-hint')}>{t('pullGiteeApprovalRunning')}</p>}
               </div>
             )
           : null}
-        <label className="dsh-gitlog-field">
+        <label className={cls('dsh-gitlog-field')}>
           <span>{t('pullMergeMethod')}</span>
           <Dropdown
             value={method}
@@ -123,7 +124,7 @@ export function MergePullDialog({ view, pull, t, onClose }: MergePullDialogProps
             ariaLabel={t('pullMergeMethod')}
           />
         </label>
-        <label className="dsh-gitlog-check">
+        <label className={cls('dsh-gitlog-check')}>
           <input
             type="checkbox"
             checked={deleteSourceBranch}
@@ -131,16 +132,16 @@ export function MergePullDialog({ view, pull, t, onClose }: MergePullDialogProps
           />
           {t('pullMergeDeleteBranch')}
         </label>
-        <p className="dsh-gitlog-field-hint">{t('pullMergeHint')}</p>
+        <p className={cls('dsh-gitlog-field-hint')}>{t('pullMergeHint')}</p>
         {webUrl === ''
           ? null
           : (
-              <p className="dsh-gitlog-field-hint">
+              <p className={cls('dsh-gitlog-field-hint')}>
                 <a href={webUrl} target="_blank" rel="noreferrer noopener">{t('pullOpenBrowser')}</a>
               </p>
             )}
       </div>
-      {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
+      {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
       <DialogActions>
         <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
         <Button

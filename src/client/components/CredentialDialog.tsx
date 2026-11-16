@@ -4,6 +4,7 @@ import type { AuthPrompt } from '../hooks/useWorkspace.js'
 import type { Translate } from '../types.js'
 import { Button, DialogActions } from './Button.js'
 import { DialogShell } from './DialogShell.js'
+import { cls } from '../styles.js'
 
 export interface CredentialDialogProps {
   prompt: AuthPrompt
@@ -31,12 +32,12 @@ export function CredentialDialog({ prompt, busy, error, t, onSubmit, onClose }: 
 
   return (
     <DialogShell title={t('credentialTitle')} t={t} onClose={onClose}>
-      <p className="dsh-gitlog-note">{t('credentialBody').replace('{remote}', prompt.remote)}</p>
+      <p className={cls('dsh-gitlog-note')}>{t('credentialBody').replace('{remote}', prompt.remote)}</p>
       {ssh
-        ? <p className="dsh-gitlog-note" role="alert">{t('credentialSsh')}</p>
+        ? <p className={cls('dsh-gitlog-note')} role="alert">{t('credentialSsh')}</p>
         : (
-            <div className="dsh-gitlog-credential">
-              <label className="dsh-gitlog-field">
+            <div className={cls('dsh-gitlog-credential')}>
+              <label className={cls('dsh-gitlog-field')}>
                 <span>{t('credentialUser')}</span>
                 <input
                   type="text"
@@ -47,7 +48,7 @@ export function CredentialDialog({ prompt, busy, error, t, onSubmit, onClose }: 
                   autoFocus
                 />
               </label>
-              <label className="dsh-gitlog-field">
+              <label className={cls('dsh-gitlog-field')}>
                 <span>{t('credentialSecret')}</span>
                 <input
                   type="password"
@@ -61,11 +62,11 @@ export function CredentialDialog({ prompt, busy, error, t, onSubmit, onClose }: 
                   autoComplete="current-password"
                 />
               </label>
-              <p className="dsh-gitlog-field-hint">{t('credentialStoreHint')}</p>
-              {noHelper ? <p className="dsh-gitlog-note" role="alert">{t('credentialNoHelper')}</p> : null}
+              <p className={cls('dsh-gitlog-field-hint')}>{t('credentialStoreHint')}</p>
+              {noHelper ? <p className={cls('dsh-gitlog-note')} role="alert">{t('credentialNoHelper')}</p> : null}
             </div>
           )}
-      {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
+      {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
       <DialogActions>
         <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
         {ssh || noHelper

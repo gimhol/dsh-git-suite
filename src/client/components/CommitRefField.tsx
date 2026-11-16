@@ -3,6 +3,7 @@ import { h, useEffect, useState } from '../runtime.js'
 import { isAbortError, requestJson, toApiError } from '../lib/api.js'
 import type { Commit, ResolvePayload, Translate } from '../types.js'
 import { hideTooltip, showTooltip } from './Tooltip.js'
+import { cls } from '../styles.js'
 
 export interface CommitRefFieldProps {
   t: Translate
@@ -76,7 +77,7 @@ export function CommitRefField({ t, path, label, value, fallback, onChange, onSu
         : `${resolved.shortHash} · ${resolved.subject || t('noSubject')}`
 
   return (
-    <label className="dsh-gitlog-field">
+    <label className={cls('dsh-gitlog-field')}>
       <span>{label}</span>
       <input
         type="text"
@@ -93,7 +94,7 @@ export function CommitRefField({ t, path, label, value, fallback, onChange, onSu
       />
       {summary === '' ? null : (
         <span
-          className={`dsh-gitlog-field-hint${error === null ? '' : ' is-error'}`}
+          className={cls(`dsh-gitlog-field-hint${error === null ? '' : ' is-error'}`)}
           onMouseEnter={event => {
             // Long subjects are clipped to one line; show the whole text on hover.
             const element = event.currentTarget

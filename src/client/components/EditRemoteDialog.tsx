@@ -5,6 +5,7 @@ import { requestSetRemoteUrl, toApiError } from '../lib/api.js'
 import type { Translate } from '../types.js'
 import { DialogShell } from './DialogShell.js'
 import { Button, DialogActions } from './Button.js'
+import { cls } from '../styles.js'
 
 export interface EditRemoteDialogProps {
   view: GitLogView
@@ -52,8 +53,8 @@ export function EditRemoteDialog({ view, remote, url: initialUrl, t, onClose }: 
 
   return (
     <DialogShell title={t('remoteEditTitle')} t={t} onClose={onClose}>
-      <div className="dsh-gitlog-repo-form">
-        <label className="dsh-gitlog-field">
+      <div className={cls('dsh-gitlog-repo-form')}>
+        <label className={cls('dsh-gitlog-field')}>
           <span>{t('remoteName')}</span>
           <input
             type="text"
@@ -70,7 +71,7 @@ export function EditRemoteDialog({ view, remote, url: initialUrl, t, onClose }: 
             autoFocus
           />
         </label>
-        <label className="dsh-gitlog-field">
+        <label className={cls('dsh-gitlog-field')}>
           <span>{t('remoteUrl')}</span>
           <input
             type="text"
@@ -86,8 +87,8 @@ export function EditRemoteDialog({ view, remote, url: initialUrl, t, onClose }: 
             autoComplete="off"
           />
         </label>
-        {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
-        <DialogActions className="dsh-gitlog-settings-actions">
+        {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
+        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
           <Button onClick={onClose}>{t('cancel')}</Button>
           <Button type="button" variant="primary" disabled={busy} onClick={() => { void save() }}>
             {busy ? t('savingRemoteUrl') : t('saveRemoteUrl')}

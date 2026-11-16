@@ -8,6 +8,7 @@ import { DialogShell } from './DialogShell.js'
 import { Button, DialogActions } from './Button.js'
 import { Dropdown } from './Dropdown.js'
 import { PlusIcon } from './GitLogIcon.js'
+import { cls } from '../styles.js'
 
 interface DialogProps {
   view: GitLogView
@@ -79,8 +80,8 @@ function CloneDialog({ view, t, onClose }: DialogProps): React.ReactElement {
 
   return (
     <DialogShell title={t('cloneTitle')} t={t} onClose={onClose}>
-      <div className="dsh-gitlog-repo-form">
-        <label className="dsh-gitlog-field">
+      <div className={cls('dsh-gitlog-repo-form')}>
+        <label className={cls('dsh-gitlog-field')}>
           <span>{t('remoteUrl')}</span>
           <input
             type="text"
@@ -97,9 +98,9 @@ function CloneDialog({ view, t, onClose }: DialogProps): React.ReactElement {
             autoFocus
           />
         </label>
-        <label className="dsh-gitlog-field">
+        <label className={cls('dsh-gitlog-field')}>
           <span>{t('cloneTo')}</span>
-          <div className="dsh-gitlog-field-row">
+          <div className={cls('dsh-gitlog-field-row')}>
             <input
               type="text"
               value={destination}
@@ -115,7 +116,7 @@ function CloneDialog({ view, t, onClose }: DialogProps): React.ReactElement {
             />
             <button
               type="button"
-              className="dsh-gitlog-btn"
+              className={cls('dsh-gitlog-btn')}
               onClick={() => { void chooseDestination() }}
               disabled={picking || busy}
             >
@@ -123,9 +124,9 @@ function CloneDialog({ view, t, onClose }: DialogProps): React.ReactElement {
             </button>
           </div>
         </label>
-        <p className="dsh-gitlog-settings-hint">{t('cloneHint')}</p>
-        {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
-        <DialogActions className="dsh-gitlog-settings-actions">
+        <p className={cls('dsh-gitlog-settings-hint')}>{t('cloneHint')}</p>
+        {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
+        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
           <Button onClick={onClose}>{t('cancel')}</Button>
           <Button type="button" variant="primary" disabled={busy} onClick={() => { void clone() }}>
             {busy ? t('cloning') : t('clone')}
@@ -185,8 +186,8 @@ function ChooseDialog({ view, t, onClose }: DialogProps): React.ReactElement {
 
   return (
     <DialogShell title={t('chooseLocalTitle')} t={t} onClose={onClose}>
-      <div className="dsh-gitlog-repo-form">
-        <label className="dsh-gitlog-field">
+      <div className={cls('dsh-gitlog-repo-form')}>
+        <label className={cls('dsh-gitlog-field')}>
           <span>{t('project')}</span>
           <Dropdown
             value={view.selectedProjectPath}
@@ -200,9 +201,9 @@ function ChooseDialog({ view, t, onClose }: DialogProps): React.ReactElement {
             noMatchesLabel={t('noMatches')}
           />
         </label>
-        <label className="dsh-gitlog-field">
+        <label className={cls('dsh-gitlog-field')}>
           <span>{t('path')}</span>
-          <div className="dsh-gitlog-field-row">
+          <div className={cls('dsh-gitlog-field-row')}>
             <input
               type="text"
               value={path}
@@ -219,7 +220,7 @@ function ChooseDialog({ view, t, onClose }: DialogProps): React.ReactElement {
             />
             <button
               type="button"
-              className="dsh-gitlog-btn"
+              className={cls('dsh-gitlog-btn')}
               onClick={() => { void chooseDirectory() }}
               disabled={picking || busy}
             >
@@ -227,9 +228,9 @@ function ChooseDialog({ view, t, onClose }: DialogProps): React.ReactElement {
             </button>
           </div>
         </label>
-        <p className="dsh-gitlog-settings-hint">{t('chooseLocalHint')}</p>
-        {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
-        <DialogActions className="dsh-gitlog-settings-actions">
+        <p className={cls('dsh-gitlog-settings-hint')}>{t('chooseLocalHint')}</p>
+        {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
+        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
           <Button
             onClick={view.rescanProjects}
             disabled={view.projectsStatus === 'loading'}
@@ -316,13 +317,13 @@ export function RepositoryMenu({ view, t }: { view: GitLogView; t: Translate }):
   return (
     <div
       ref={rootRef}
-      className="dsh-gitlog-add"
+      className={cls('dsh-gitlog-add')}
       onMouseEnter={show}
       onMouseLeave={hide}
     >
       <Button
         iconOnly
-        className="dsh-gitlog-add-btn"
+        className={cls('dsh-gitlog-add-btn')}
         title={t('addRepository')}
         ariaHasPopup="menu"
         ariaExpanded={open}
@@ -332,7 +333,7 @@ export function RepositoryMenu({ view, t }: { view: GitLogView; t: Translate }):
       {open
         ? (
             <div
-              className="dsh-gitlog-add-menu is-floating"
+              className={cls('dsh-gitlog-add-menu is-floating')}
               style={{ top: anchor?.top ?? 0, left: anchor?.left ?? 0 }}
               role="menu"
               aria-label={t('addRepository')}

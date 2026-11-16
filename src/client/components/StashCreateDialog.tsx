@@ -7,6 +7,7 @@ import type { Translate } from '../types.js'
 import { Button, DialogActions } from './Button.js'
 import { DialogShell } from './DialogShell.js'
 import { toast } from './Toast.js'
+import { cls } from '../styles.js'
 
 export interface StashCreateDialogProps {
   view: GitLogView
@@ -46,8 +47,8 @@ export function StashCreateDialog({ view, ws, t, onClose }: StashCreateDialogPro
 
   return (
     <DialogShell title={t('stashCreateTitle')} t={t} onClose={onClose}>
-      <div className="dsh-gitlog-repo-form">
-        <label className="dsh-gitlog-field">
+      <div className={cls('dsh-gitlog-repo-form')}>
+        <label className={cls('dsh-gitlog-field')}>
           <span>{t('stashMessage')}</span>
           <input
             type="text"
@@ -64,7 +65,7 @@ export function StashCreateDialog({ view, ws, t, onClose }: StashCreateDialogPro
             autoFocus
           />
         </label>
-        <label className="dsh-gitlog-check">
+        <label className={cls('dsh-gitlog-check')}>
           <input
             type="checkbox"
             checked={includeUntracked}
@@ -72,9 +73,9 @@ export function StashCreateDialog({ view, ws, t, onClose }: StashCreateDialogPro
           />
           {t('stashIncludeUntracked')}
         </label>
-        <p className="dsh-gitlog-settings-hint">{t('stashHint')}</p>
-        {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
-        <DialogActions className="dsh-gitlog-settings-actions">
+        <p className={cls('dsh-gitlog-settings-hint')}>{t('stashHint')}</p>
+        {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
+        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
           <Button onClick={onClose}>{t('cancel')}</Button>
           <Button type="button" variant="primary" disabled={busy} onClick={() => { void save() }}>
             {busy ? t('stashSaving') : t('stashSave')}

@@ -2,6 +2,7 @@ import type * as React from 'react'
 import { GitLogPanel } from './GitLogPanel.js'
 import { h } from './runtime.js'
 import type { Translate } from './types.js'
+import { cls } from './styles.js'
 
 /**
  * The right-sidebar tab body. It renders the same panel as the main area, with
@@ -11,7 +12,7 @@ import type { Translate } from './types.js'
  */
 export function SidebarGitLogPanel({ t, sessionId }: { t: Translate; sessionId?: string }): React.ReactElement {
   return (
-    <div className="dsh-gitlog-sidebar">
+    <div className={cls('dsh-gitlog-sidebar')}>
       <GitLogPanel t={t} compact sessionId={sessionId} />
     </div>
   )

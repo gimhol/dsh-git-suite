@@ -5,6 +5,7 @@ import { requestTag, toApiError } from '../lib/api.js'
 import type { Translate } from '../types.js'
 import { Button, DialogActions } from './Button.js'
 import { DialogShell } from './DialogShell.js'
+import { cls } from '../styles.js'
 
 export interface DeleteTagDialogProps {
   view: GitLogView
@@ -38,8 +39,8 @@ export function DeleteTagDialog({ view, tag, t, onClose }: DeleteTagDialogProps)
 
   return (
     <DialogShell title={t('tagDeleteTitle')} t={t} onClose={onClose}>
-      <p className="dsh-gitlog-note">{t('tagDeleteConfirm').replace('{tag}', tag)}</p>
-      {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
+      <p className={cls('dsh-gitlog-note')}>{t('tagDeleteConfirm').replace('{tag}', tag)}</p>
+      {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
       <DialogActions>
         <Button onClick={onClose}>{t('cancel')}</Button>
         <Button variant="danger" disabled={busy} onClick={() => { void confirm() }}>

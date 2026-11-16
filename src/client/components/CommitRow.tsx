@@ -6,6 +6,7 @@ import type { Commit, CommitColumns, Translate } from '../types.js'
 import { CommitGraph } from './CommitGraph.js'
 import { Refs } from './Refs.js'
 import { tooltipProps } from './Tooltip.js'
+import { cls } from '../styles.js'
 
 /** One log line: the graph lane height has to match the row height (`.dsh-gitlog-commit`) so lines connect. */
 export const COMMIT_ROW_HEIGHT = 26
@@ -29,28 +30,28 @@ export function CommitRow({ commit, selected, onSelect, onContextMenu, onRefCont
   return (
     <button
       type="button"
-      className={`dsh-gitlog-commit${selected ? ' is-selected' : ''}`}
+      className={cls(`dsh-gitlog-commit${selected ? ' is-selected' : ''}`)}
       aria-pressed={selected}
       onClick={() => onSelect(commit)}
       onContextMenu={event => onContextMenu?.(commit, event)}
     >
       {columns.graph
         ? (
-            <span className="dsh-gitlog-graph" aria-hidden={true}>
+            <span className={cls('dsh-gitlog-graph')} aria-hidden={true}>
               <CommitGraph row={row} geometry={geometry} height={COMMIT_ROW_HEIGHT} />
             </span>
           )
         : null}
-      <span className="dsh-gitlog-desc">
+      <span className={cls('dsh-gitlog-desc')}>
         <Refs refs={commit.refs} onRefContextMenu={onRefContextMenu} />
-        <span className="dsh-gitlog-subject" {...tooltipProps(commit.subject || t('noSubject'))}>{commit.subject || t('noSubject')}</span>
-        {isMerge ? <span className="dsh-gitlog-merge">{t('merge')}</span> : null}
+        <span className={cls('dsh-gitlog-subject')} {...tooltipProps(commit.subject || t('noSubject'))}>{commit.subject || t('noSubject')}</span>
+        {isMerge ? <span className={cls('dsh-gitlog-merge')}>{t('merge')}</span> : null}
       </span>
-      {columns.date ? <span className="dsh-gitlog-commit-date">{formatDateTime(commit.date, t('localeId'))}</span> : null}
+      {columns.date ? <span className={cls('dsh-gitlog-commit-date')}>{formatDateTime(commit.date, t('localeId'))}</span> : null}
       {columns.author
-        ? <span className="dsh-gitlog-commit-author" {...tooltipProps(`${commit.author} <${commit.email}>`)}>{commit.author}</span>
+        ? <span className={cls('dsh-gitlog-commit-author')} {...tooltipProps(`${commit.author} <${commit.email}>`)}>{commit.author}</span>
         : null}
-      {columns.hash ? <code className="dsh-gitlog-commit-hash" {...tooltipProps(commit.hash)}>{commit.shortHash}</code> : null}
+      {columns.hash ? <code className={cls('dsh-gitlog-commit-hash')} {...tooltipProps(commit.hash)}>{commit.shortHash}</code> : null}
     </button>
   )
 }

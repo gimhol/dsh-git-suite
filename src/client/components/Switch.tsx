@@ -1,6 +1,7 @@
 import type * as React from 'react'
 import { h } from '../runtime.js'
 import { Button } from './Button.js'
+import { cls } from '../styles.js'
 
 export interface SwitchOption<Value extends string> {
   value: Value
@@ -30,7 +31,7 @@ export function Switch<Value extends string>({
 }: SwitchProps<Value>): React.ReactElement {
   return (
     <div
-      className={`dsh-gitlog-switch${className === undefined ? '' : ` ${className}`}`}
+      className={cls(`dsh-gitlog-switch${className === undefined ? '' : ` ${className}`}`)}
       role="group"
       aria-label={ariaLabel}
     >

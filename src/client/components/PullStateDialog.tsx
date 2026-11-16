@@ -4,6 +4,7 @@ import type { PullsView } from '../hooks/usePulls.js'
 import type { Translate } from '../types.js'
 import { Button, DialogActions } from './Button.js'
 import { DialogShell } from './DialogShell.js'
+import { cls } from '../styles.js'
 
 export type PullStateAction = 'close' | 'reopen'
 
@@ -38,11 +39,11 @@ export function PullStateDialog({ view, number, action, t, onClose }: PullStateD
 
   return (
     <DialogShell title={close ? t('pullCloseTitle') : t('pullReopenTitle')} t={t} onClose={onClose}>
-      <p className="dsh-gitlog-note">
+      <p className={cls('dsh-gitlog-note')}>
         {(close ? t('pullCloseConfirm') : t('pullReopenConfirm')).replace('{number}', String(number))}
       </p>
-      <p className="dsh-gitlog-field-hint">{close ? t('pullCloseHint') : t('pullReopenHint')}</p>
-      {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
+      <p className={cls('dsh-gitlog-field-hint')}>{close ? t('pullCloseHint') : t('pullReopenHint')}</p>
+      {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
       <DialogActions>
         <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
         <Button variant={close ? 'danger' : 'primary'} disabled={busy} onClick={() => { void confirm() }}>

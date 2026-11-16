@@ -7,6 +7,7 @@ import { Button, DialogActions } from './Button.js'
 import { CommitRefField } from './CommitRefField.js'
 import { DialogShell } from './DialogShell.js'
 import { toast } from './Toast.js'
+import { cls } from '../styles.js'
 
 export interface RebaseDialogProps {
   view: GitLogView
@@ -80,8 +81,8 @@ export function RebaseDialog({ view, t, initialTarget = '', onDone, onClose }: R
     return (
       <DialogShell title={t('rebaseOntoTitle')} t={t} onClose={onClose}>
         {error === null
-          ? <p className="dsh-gitlog-note">{t('loadingCommit')}</p>
-          : <p className="dsh-gitlog-note" role="alert">{error}</p>}
+          ? <p className={cls('dsh-gitlog-note')}>{t('loadingCommit')}</p>
+          : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
         <DialogActions>
           <Button onClick={onClose}>{t('close')}</Button>
         </DialogActions>
@@ -91,8 +92,8 @@ export function RebaseDialog({ view, t, initialTarget = '', onDone, onClose }: R
 
   return (
     <DialogShell title={t('rebaseOntoTitle')} t={t} onClose={onClose}>
-      <div className="dsh-gitlog-repo-form">
-        <p className="dsh-gitlog-dialog-target">
+      <div className={cls('dsh-gitlog-repo-form')}>
+        <p className={cls('dsh-gitlog-dialog-target')}>
           <code>{branch === '' ? 'HEAD' : branch}</code>
           <span>{head.subject}</span>
         </p>
@@ -105,11 +106,11 @@ export function RebaseDialog({ view, t, initialTarget = '', onDone, onClose }: R
           onChange={setTarget}
           onSubmit={() => { void run() }}
         />
-        <p className="dsh-gitlog-warning" role="alert">
+        <p className={cls('dsh-gitlog-warning')} role="alert">
           {t('rebaseOntoWarning').replace('{branch}', branch === '' ? 'HEAD' : branch)}
         </p>
-        {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
-        <DialogActions className="dsh-gitlog-settings-actions">
+        {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
+        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
           <Button onClick={onClose}>{t('cancel')}</Button>
           <Button variant="primary" disabled={busy || target.trim() === ''} onClick={() => { void run() }}>
             {busy ? t('rebasing') : t('rebaseOntoAction')}

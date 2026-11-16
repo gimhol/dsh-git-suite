@@ -5,6 +5,7 @@ import { requestBranchAction, toApiError } from '../lib/api.js'
 import type { Translate } from '../types.js'
 import { DialogShell } from './DialogShell.js'
 import { Button, DialogActions } from './Button.js'
+import { cls } from '../styles.js'
 
 export interface DeleteRemoteBranchDialogProps {
   view: GitLogView
@@ -40,10 +41,10 @@ export function DeleteRemoteBranchDialog({ view, remote, branch, t, onClose }: D
 
   return (
     <DialogShell title={t('remoteBranchDeleteTitle')} t={t} onClose={onClose}>
-      <p className="dsh-gitlog-note">
+      <p className={cls('dsh-gitlog-note')}>
         {t('remoteBranchDeleteConfirm').replace('{branch}', branch).replace('{remote}', remote)}
       </p>
-      {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
+      {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
       <DialogActions>
         <Button onClick={onClose}>{t('cancel')}</Button>
         <Button variant="danger" disabled={busy} onClick={() => { void confirm() }}>

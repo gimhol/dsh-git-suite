@@ -88,7 +88,7 @@ export interface RemoteUrlPayload {
   url: string
 }
 
-export type BranchAction = 'merge' | 'rebase' | 'rebase-onto' | 'rename' | 'delete' | 'track' | 'delete-remote'
+export type BranchAction = 'merge' | 'rebase' | 'rebase-onto' | 'rename' | 'delete' | 'track' | 'delete-remote' | 'upstream'
 
 export interface BranchActionPayload {
   ok: true
@@ -96,6 +96,8 @@ export interface BranchActionPayload {
   branch: string
   remote?: string
   newName?: string
+  /** Remote-tracking ref a local branch now follows, or empty when it tracks nothing. */
+  upstream?: string
 }
 
 export interface PushTarget {

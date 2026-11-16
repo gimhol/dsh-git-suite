@@ -5,6 +5,7 @@ import { requestAction, toApiError } from '../lib/api.js'
 import type { Translate } from '../types.js'
 import { Button, DialogActions } from './Button.js'
 import { DialogShell } from './DialogShell.js'
+import { cls } from '../styles.js'
 
 export interface IgnoreFileDialogProps {
   view: GitLogView
@@ -53,8 +54,8 @@ export function IgnoreFileDialog({ view, file, t, onDone, onClose }: IgnoreFileD
 
   return (
     <DialogShell title={t('ignoreTitle')} t={t} onClose={onClose}>
-      <div className="dsh-gitlog-repo-form">
-        <label className="dsh-gitlog-check">
+      <div className={cls('dsh-gitlog-repo-form')}>
+        <label className={cls('dsh-gitlog-check')}>
           <input
             type="radio"
             name="gitlog-ignore-mode"
@@ -63,7 +64,7 @@ export function IgnoreFileDialog({ view, file, t, onDone, onClose }: IgnoreFileD
           />
           {t('ignoreOnlyFile')}
         </label>
-        <label className="dsh-gitlog-check">
+        <label className={cls('dsh-gitlog-check')}>
           <input
             type="radio"
             name="gitlog-ignore-mode"
@@ -72,7 +73,7 @@ export function IgnoreFileDialog({ view, file, t, onDone, onClose }: IgnoreFileD
           />
           {t('ignoreSameName')}
         </label>
-        <label className="dsh-gitlog-check">
+        <label className={cls('dsh-gitlog-check')}>
           <input
             type="radio"
             name="gitlog-ignore-mode"
@@ -82,9 +83,9 @@ export function IgnoreFileDialog({ view, file, t, onDone, onClose }: IgnoreFileD
           />
           {extension === '' ? t('ignoreNoExtension') : t('ignoreExtension').replace('{ext}', extension)}
         </label>
-        <p className="dsh-gitlog-settings-hint">{`${t('ignorePattern')} ${patternOf(mode)}`}</p>
-        {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
-        <DialogActions className="dsh-gitlog-settings-actions">
+        <p className={cls('dsh-gitlog-settings-hint')}>{`${t('ignorePattern')} ${patternOf(mode)}`}</p>
+        {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
+        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
           <Button onClick={onClose}>{t('cancel')}</Button>
           <Button type="button" variant="primary" disabled={busy} onClick={() => { void save() }}>
             {busy ? t('ignoring') : t('ignoreAction')}

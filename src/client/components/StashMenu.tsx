@@ -6,6 +6,7 @@ import type { Selection, Translate } from '../types.js'
 import { Button, DialogActions } from './Button.js'
 import { DialogShell } from './DialogShell.js'
 import { toast } from './Toast.js'
+import { cls } from '../styles.js'
 
 export interface StashMenuState {
   selection: Selection
@@ -63,7 +64,7 @@ export function StashMenu({ view, context, t, onChanged, onClose }: StashMenuPro
   if (dropOpen) {
     return (
       <DialogShell title={t('stashDropTitle')} t={t} onClose={onClose}>
-        <p className="dsh-gitlog-warning" role="alert">
+        <p className={cls('dsh-gitlog-warning')} role="alert">
           {t('stashDropConfirm').replace('{ref}', ref)}
         </p>
         <DialogActions>
@@ -80,7 +81,7 @@ export function StashMenu({ view, context, t, onChanged, onClose }: StashMenuPro
   const top = Math.min(context.y, window.innerHeight - 150)
   return (
     <div
-      className="dsh-gitlog-commit-menu"
+      className={cls('dsh-gitlog-commit-menu')}
       style={{ left, top }}
       role="menu"
       aria-label={t('stashes')}

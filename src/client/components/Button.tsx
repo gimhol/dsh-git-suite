@@ -1,5 +1,6 @@
 import type * as React from 'react'
 import { h } from '../runtime.js'
+import { cls } from '../styles.js'
 import { tooltipProps } from './Tooltip.js'
 
 export type ButtonVariant = 'default' | 'primary' | 'ghost' | 'danger'
@@ -40,16 +41,16 @@ export function Button({
   ariaExpanded,
   ariaPressed,
 }: ButtonProps): React.ReactElement {
-  const classes = ['dsh-gitlog-btn']
-  if (variant === 'primary') classes.push('primary')
-  if (variant === 'danger') classes.push('danger')
-  if (variant === 'ghost') classes.push('ghost')
-  if (iconOnly) classes.push('dsh-gitlog-icon-btn')
+  const classes = [cls('dsh-gitlog-btn')]
+  if (variant === 'primary') classes.push(cls('primary'))
+  if (variant === 'danger') classes.push(cls('danger'))
+  if (variant === 'ghost') classes.push(cls('ghost'))
+  if (iconOnly) classes.push(cls('dsh-gitlog-icon-btn'))
   if (className !== undefined && className !== '') classes.push(className)
   return (
     <button
       type={type}
-      className={classes.join(' ')}
+      className={cls(classes.join(' '))}
       disabled={disabled || loading}
       aria-label={ariaLabel ?? title}
       {...(title === undefined ? {} : tooltipProps(title))}
@@ -72,6 +73,6 @@ export interface DialogActionsProps {
 }
 
 /** Right-aligned dialog footer: cancel first, confirm last, 10px gap. */
-export function DialogActions({ children, className = 'dsh-gitlog-dialog-actions' }: DialogActionsProps): React.ReactElement {
-  return <div className={className}>{children}</div>
+export function DialogActions({ children, className = cls('dsh-gitlog-dialog-actions') }: DialogActionsProps): React.ReactElement {
+  return <div className={cls(className)}>{children}</div>
 }

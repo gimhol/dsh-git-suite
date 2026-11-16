@@ -5,6 +5,7 @@ import { requestAction, toApiError } from '../lib/api.js'
 import type { Translate } from '../types.js'
 import { Button, DialogActions } from './Button.js'
 import { DialogShell } from './DialogShell.js'
+import { cls } from '../styles.js'
 
 export interface FileActionDialogProps {
   view: GitLogView
@@ -42,10 +43,10 @@ export function FileActionDialog({ view, file, action, t, onDone, onClose }: Fil
 
   return (
     <DialogShell title={discard ? t('discardTitle') : t('deleteFileTitle')} t={t} onClose={onClose}>
-      <p className="dsh-gitlog-warning" role="alert">
+      <p className={cls('dsh-gitlog-warning')} role="alert">
         {(discard ? t('discardConfirm') : t('deleteFileConfirm')).replace('{file}', file)}
       </p>
-      {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
+      {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
       <DialogActions>
         <Button onClick={onClose}>{t('cancel')}</Button>
         <Button variant="danger" disabled={busy} onClick={() => { void confirm() }}>

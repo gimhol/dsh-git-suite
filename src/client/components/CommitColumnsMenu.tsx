@@ -1,6 +1,7 @@
 import type * as React from 'react'
 import { h, useEffect, useRef } from '../runtime.js'
 import type { CommitColumn, CommitColumns, Translate } from '../types.js'
+import { cls } from '../styles.js'
 
 export interface CommitColumnsMenuState {
   x: number
@@ -53,7 +54,7 @@ export function CommitColumnsMenu({ context, columns, narrow, t, onToggle, onClo
   return (
     <div
       ref={menuRef}
-      className="dsh-gitlog-commit-menu dsh-gitlog-columns-menu"
+      className={cls('dsh-gitlog-commit-menu dsh-gitlog-columns-menu')}
       style={{ left, top }}
       role="menu"
       aria-label={t('columnsMenu')}
@@ -67,7 +68,7 @@ export function CommitColumnsMenu({ context, columns, narrow, t, onToggle, onClo
           disabled={narrow && (column === 'author' || column === 'hash')}
           onClick={() => onToggle(column)}
         >
-          <span className="dsh-gitlog-menu-check" aria-hidden="true">{columns[column] ? '✓' : ''}</span>
+          <span className={cls('dsh-gitlog-menu-check')} aria-hidden="true">{columns[column] ? '✓' : ''}</span>
           {label(column)}
         </button>
       ))}

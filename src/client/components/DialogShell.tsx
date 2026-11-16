@@ -1,6 +1,7 @@
 import type * as React from 'react'
 import { h, useEffect, useRef } from '../runtime.js'
 import type { Translate } from '../types.js'
+import { cls } from '../styles.js'
 
 export interface DialogShellProps {
   title: string
@@ -27,7 +28,7 @@ export function DialogShell({ title, t, wide = false, onClose, children }: Dialo
 
   return (
     <div
-      className="dsh-gitlog-settings-backdrop"
+      className={cls('dsh-gitlog-settings-backdrop')}
       onMouseDown={event => {
         pressedBackdrop.current = event.target === event.currentTarget
       }}
@@ -38,23 +39,23 @@ export function DialogShell({ title, t, wide = false, onClose, children }: Dialo
       }}
     >
       <div
-        className={`dsh-gitlog-settings dsh-gitlog-repo-dialog${wide ? ' dsh-gitlog-dialog-wide' : ''}`}
+        className={cls(`dsh-gitlog-settings dsh-gitlog-repo-dialog${wide ? ' dsh-gitlog-dialog-wide' : ''}`)}
         role="dialog"
         aria-modal="true"
         aria-label={title}
       >
-        <div className="dsh-gitlog-settings-head">
+        <div className={cls('dsh-gitlog-settings-head')}>
           <h2>{title}</h2>
           <button
             type="button"
-            className="dsh-gitlog-settings-close"
+            className={cls('dsh-gitlog-settings-close')}
             onClick={onClose}
             aria-label={t('close')}
           >
             ×
           </button>
         </div>
-        <div className="dsh-gitlog-settings-body">{children}</div>
+        <div className={cls('dsh-gitlog-settings-body')}>{children}</div>
       </div>
     </div>
   )

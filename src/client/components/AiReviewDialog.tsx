@@ -4,6 +4,7 @@ import type { PullsView } from '../hooks/usePulls.js'
 import type { AiReviewMode, Translate } from '../types.js'
 import { Button, DialogActions } from './Button.js'
 import { DialogShell } from './DialogShell.js'
+import { cls } from '../styles.js'
 
 export interface AiReviewDialogProps {
   view: PullsView
@@ -22,7 +23,7 @@ let aiReviewDialogSequence = 0
 /** Asks how much file context to send before starting an AI review. */
 export function AiReviewDialog({ view, t, onClose }: AiReviewDialogProps): React.ReactElement {
   const [mode, setMode] = useState<AiReviewMode>(view.aiReviewMode)
-  const [radioName] = useState(() => `dsh-gitlog-ai-mode-${++aiReviewDialogSequence}`)
+  const [radioName] = useState(() => `git-suite-ai-mode-${++aiReviewDialogSequence}`)
 
   const start = (): void => {
     view.setAiReviewMode(mode)
@@ -32,12 +33,12 @@ export function AiReviewDialog({ view, t, onClose }: AiReviewDialogProps): React
 
   return (
     <DialogShell title={t('pullAiReviewTitle')} t={t} onClose={onClose}>
-      <p className="dsh-gitlog-note">{t('pullAiReviewDialogHint')}</p>
-      <div className="dsh-gitlog-ai-options">
+      <p className={cls('dsh-gitlog-note')}>{t('pullAiReviewDialogHint')}</p>
+      <div className={cls('dsh-gitlog-ai-options')}>
         {MODES.map(option => (
           <label
             key={option.value}
-            className={`dsh-gitlog-ai-option${mode === option.value ? ' is-selected' : ''}`}
+            className={cls(`dsh-gitlog-ai-option${mode === option.value ? ' is-selected' : ''}`)}
           >
             <input
               type="radio"
@@ -46,9 +47,9 @@ export function AiReviewDialog({ view, t, onClose }: AiReviewDialogProps): React
               checked={mode === option.value}
               onChange={() => setMode(option.value)}
             />
-            <span className="dsh-gitlog-ai-option-text">
-              <span className="dsh-gitlog-ai-option-label">{t(option.label)}</span>
-              <span className="dsh-gitlog-ai-option-hint">{t(option.hint)}</span>
+            <span className={cls('dsh-gitlog-ai-option-text')}>
+              <span className={cls('dsh-gitlog-ai-option-label')}>{t(option.label)}</span>
+              <span className={cls('dsh-gitlog-ai-option-hint')}>{t(option.hint)}</span>
             </span>
           </label>
         ))}

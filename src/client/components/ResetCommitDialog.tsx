@@ -5,6 +5,7 @@ import { requestCommitOp, toApiError } from '../lib/api.js'
 import type { Commit, Translate } from '../types.js'
 import { Button, DialogActions } from './Button.js'
 import { DialogShell } from './DialogShell.js'
+import { cls } from '../styles.js'
 
 export interface ResetCommitDialogProps {
   view: GitLogView
@@ -44,11 +45,11 @@ export function ResetCommitDialog({ view, commit, t, onDone, onClose }: ResetCom
 
   return (
     <DialogShell title={t('resetTitle')} t={t} onClose={onClose}>
-      <p className="dsh-gitlog-dialog-target">
+      <p className={cls('dsh-gitlog-dialog-target')}>
         <code>{commit.shortHash}</code>
         <span>{commit.subject}</span>
       </p>
-      <fieldset className="dsh-gitlog-checkout-options">
+      <fieldset className={cls('dsh-gitlog-checkout-options')}>
         <legend>{t('resetMode')}</legend>
         <label>
           <input type="radio" name="reset-mode" checked={mode === 'soft'} onChange={() => setMode('soft')} />
@@ -63,8 +64,8 @@ export function ResetCommitDialog({ view, commit, t, onDone, onClose }: ResetCom
           {t('resetHard')}
         </label>
       </fieldset>
-      {hard ? <p className="dsh-gitlog-warning" role="alert">{t('resetHardWarning')}</p> : null}
-      {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
+      {hard ? <p className={cls('dsh-gitlog-warning')} role="alert">{t('resetHardWarning')}</p> : null}
+      {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
       <DialogActions>
         <Button onClick={onClose}>{t('cancel')}</Button>
         <Button variant={hard ? 'danger' : 'primary'} disabled={busy} onClick={() => { void apply() }}>

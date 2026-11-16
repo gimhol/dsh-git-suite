@@ -12,6 +12,7 @@ import { DiffView } from './DiffView.js'
 import { Spinner } from './States.js'
 import { SplitDiffIcon, UnifiedDiffIcon } from './GitLogIcon.js'
 import { Splitter } from './Splitter.js'
+import { cls } from '../styles.js'
 
 export interface DetailPaneProps {
   detail: CommitDetail | null
@@ -68,7 +69,7 @@ export function DetailPane({ detail, status, error, t }: DetailPaneProps): React
 
   if (status === 'idle') {
     return (
-      <div className="dsh-gitlog-state">
+      <div className={cls('dsh-gitlog-state')}>
         <h2>{t('selectCommit')}</h2>
         <p>{t('selectCommitHint')}</p>
       </div>
@@ -76,7 +77,7 @@ export function DetailPane({ detail, status, error, t }: DetailPaneProps): React
   }
   if (status === 'loading') {
     return (
-      <div className="dsh-gitlog-state">
+      <div className={cls('dsh-gitlog-state')}>
         <Spinner />
         <p>{t('loadingCommit')}</p>
       </div>
@@ -84,7 +85,7 @@ export function DetailPane({ detail, status, error, t }: DetailPaneProps): React
   }
   if (status === 'error' || detail === null) {
     return (
-      <div className="dsh-gitlog-state">
+      <div className={cls('dsh-gitlog-state')}>
         <h2>{t('errorTitle')}</h2>
         <p>{error?.message || t('unknownError')}</p>
       </div>
@@ -106,19 +107,19 @@ export function DetailPane({ detail, status, error, t }: DetailPaneProps): React
     : undefined
 
   return (
-    <div key={detail.hash} ref={innerRef} className="dsh-gitlog-detail-inner" style={innerStyle}>
-      <div ref={infoRef} className="dsh-gitlog-detail-info">
-        <div ref={summaryRef} className="dsh-gitlog-detail-summary" style={summaryStyle}>
-          <dl className="dsh-gitlog-meta-grid">
+    <div key={detail.hash} ref={innerRef} className={cls('dsh-gitlog-detail-inner')} style={innerStyle}>
+      <div ref={infoRef} className={cls('dsh-gitlog-detail-info')}>
+        <div ref={summaryRef} className={cls('dsh-gitlog-detail-summary')} style={summaryStyle}>
+          <dl className={cls('dsh-gitlog-meta-grid')}>
             <dt>{t('author')}</dt>
             <dd>{`${detail.author} <${detail.email}>`}</dd>
             <dt>{t('date')}</dt>
             <dd>{formatDateTime(detail.date, t('localeId'))}</dd>
             <dt>{t('commit')}</dt>
-            <dd className="dsh-gitlog-detail-commit">
-              <code className="dsh-gitlog-hash">{detail.shortHash}</code>
+            <dd className={cls('dsh-gitlog-detail-commit')}>
+              <code className={cls('dsh-gitlog-hash')}>{detail.shortHash}</code>
               {detail.parents.length > 1
-                ? <span className="dsh-gitlog-merge">{t('merge')}</span>
+                ? <span className={cls('dsh-gitlog-merge')}>{t('merge')}</span>
                 : null}
             </dd>
             <dt>{t('parents')}</dt>
@@ -126,39 +127,39 @@ export function DetailPane({ detail, status, error, t }: DetailPaneProps): React
             <dt>{t('commitRefs')}</dt>
             <dd><Refs refs={detail.refs} /></dd>
             <dt>{t('commitMessage')}</dt>
-            <dd className="dsh-gitlog-detail-message">
-              <div className="dsh-gitlog-detail-subject">{detail.subject || t('noSubject')}</div>
-              {detail.body === '' ? null : <pre className="dsh-gitlog-detail-body">{detail.body}</pre>}
+            <dd className={cls('dsh-gitlog-detail-message')}>
+              <div className={cls('dsh-gitlog-detail-subject')}>{detail.subject || t('noSubject')}</div>
+              {detail.body === '' ? null : <pre className={cls('dsh-gitlog-detail-body')}>{detail.body}</pre>}
             </dd>
           </dl>
         </div>
         <Splitter
           orientation="horizontal"
-          className="dsh-gitlog-detail-summary-split"
+          className={cls('dsh-gitlog-detail-summary-split')}
           label={t('resizeSummary')}
           onStart={summary.start}
           onDrag={summary.drag}
         />
-        <div className="dsh-gitlog-detail-files">
+        <div className={cls('dsh-gitlog-detail-files')}>
           <h3>{`${t('changedFiles')}(${detail.files.length})`}</h3>
           {detail.files.length === 0
-            ? <p className="dsh-gitlog-note">{t('noPatch')}</p>
+            ? <p className={cls('dsh-gitlog-note')}>{t('noPatch')}</p>
             : (
-                <ul className="dsh-gitlog-files">
+                <ul className={cls('dsh-gitlog-files')}>
                   {detail.files.map((file, index) => (
                     <li key={file.path}>
                       <button
                         type="button"
-                        className={`dsh-gitlog-file${index === selectedFile ? ' is-selected' : ''}`}
+                        className={cls(`dsh-gitlog-file${index === selectedFile ? ' is-selected' : ''}`)}
                         aria-pressed={index === selectedFile}
                         {...tooltipProps(file.path)}
                         onClick={() => setFileChoice({ hash: detail.hash, index })}
                       >
-                        <span className="dsh-gitlog-file-path">{file.path}</span>
+                        <span className={cls('dsh-gitlog-file-path')}>{file.path}</span>
                         {file.binary
-                          ? <span className="dsh-gitlog-binary">{t('binary')}</span>
-                          : <span className="dsh-gitlog-add">{`+${file.additions ?? 0}`}</span>}
-                        {file.binary ? <span /> : <span className="dsh-gitlog-del">{`-${file.deletions ?? 0}`}</span>}
+                          ? <span className={cls('dsh-gitlog-binary')}>{t('binary')}</span>
+                          : <span className={cls('dsh-gitlog-add')}>{`+${file.additions ?? 0}`}</span>}
+                        {file.binary ? <span /> : <span className={cls('dsh-gitlog-del')}>{`-${file.deletions ?? 0}`}</span>}
                       </button>
                     </li>
                   ))}
@@ -172,15 +173,15 @@ export function DetailPane({ detail, status, error, t }: DetailPaneProps): React
         onStart={info.start}
         onDrag={info.drag}
       />
-      <div className="dsh-gitlog-detail-patch">
-        <div className="dsh-gitlog-detail-patch-head">
+      <div className={cls('dsh-gitlog-detail-patch')}>
+        <div className={cls('dsh-gitlog-detail-patch-head')}>
           <h3>{t('patch')}</h3>
           {activeFile !== undefined
-            ? <code className="dsh-gitlog-patch-file" {...tooltipProps(activeFile.path)}>{activeFile.path}</code>
+            ? <code className={cls('dsh-gitlog-patch-file')} {...tooltipProps(activeFile.path)}>{activeFile.path}</code>
             : null}
           <button
             type="button"
-            className="dsh-gitlog-diff-mode"
+            className={cls('dsh-gitlog-diff-mode')}
             aria-label={diffMode.mode === 'split' ? t('diffUnified') : t('diffSplit')}
             {...tooltipProps(diffMode.mode === 'split' ? t('diffUnified') : t('diffSplit'))}
             onClick={diffMode.toggle}
@@ -189,7 +190,7 @@ export function DetailPane({ detail, status, error, t }: DetailPaneProps): React
           </button>
         </div>
         {detail.files.length === 0
-          ? <p className="dsh-gitlog-note">{t('noPatch')}</p>
+          ? <p className={cls('dsh-gitlog-note')}>{t('noPatch')}</p>
           : activeSection !== undefined
             ? (
                 <DiffView
@@ -201,9 +202,9 @@ export function DetailPane({ detail, status, error, t }: DetailPaneProps): React
                   mode={diffMode.mode}
                 />
               )
-            : <p className="dsh-gitlog-note">{detail.patchTruncated ? t('patchTruncated') : t('fileNoPatch')}</p>}
+            : <p className={cls('dsh-gitlog-note')}>{detail.patchTruncated ? t('patchTruncated') : t('fileNoPatch')}</p>}
         {detail.patchTruncated && activeSection !== undefined
-          ? <p className="dsh-gitlog-note">{t('patchTruncated')}</p>
+          ? <p className={cls('dsh-gitlog-note')}>{t('patchTruncated')}</p>
           : null}
       </div>
     </div>

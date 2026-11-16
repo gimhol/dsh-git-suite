@@ -2,6 +2,7 @@ import type * as React from 'react'
 import { h } from '../runtime.js'
 import type { ApiError } from '../lib/api.js'
 import type { Translate } from '../types.js'
+import { cls } from '../styles.js'
 
 export interface ErrorStateProps {
   error: ApiError | null
@@ -31,12 +32,12 @@ export function ErrorState({ error, t, onRetry }: ErrorStateProps): React.ReactE
           ? t('gitMissingHint')
           : null
   return (
-    <div className="dsh-gitlog-state">
+    <div className={cls('dsh-gitlog-state')}>
       <h2>{title}</h2>
       {hint !== null ? <p>{hint}</p> : null}
-      <p className="dsh-gitlog-error-code">{`${code ?? 'unknown'}${error?.message ? ` · ${error.message}` : ''}`}</p>
-      {error?.details?.path ? <p className="dsh-gitlog-error-code">{error.details.path}</p> : null}
-      <button type="button" className="dsh-gitlog-btn" onClick={onRetry}>{t('tryAgain')}</button>
+      <p className={cls('dsh-gitlog-error-code')}>{`${code ?? 'unknown'}${error?.message ? ` · ${error.message}` : ''}`}</p>
+      {error?.details?.path ? <p className={cls('dsh-gitlog-error-code')}>{error.details.path}</p> : null}
+      <button type="button" className={cls('dsh-gitlog-btn')} onClick={onRetry}>{t('tryAgain')}</button>
     </div>
   )
 }

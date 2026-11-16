@@ -7,6 +7,7 @@ import { DialogShell } from './DialogShell.js'
 import { Button, DialogActions } from './Button.js'
 import { Dropdown, type DropdownOption } from './Dropdown.js'
 import { tooltipProps } from './Tooltip.js'
+import { cls } from '../styles.js'
 
 export interface PushDialogProps {
   view: GitLogView
@@ -62,9 +63,9 @@ export function PushDialog({ view, ws, t, onClose }: PushDialogProps): React.Rea
 
   return (
     <DialogShell title={`${t('push')}: ${view.repo?.repoName ?? ''}`} t={t} wide onClose={onClose}>
-      <div className="dsh-gitlog-push">
-        <div className="dsh-gitlog-push-remote">
-          <label className="dsh-gitlog-field">
+      <div className={cls('dsh-gitlog-push')}>
+        <div className={cls('dsh-gitlog-push-remote')}>
+          <label className={cls('dsh-gitlog-field')}>
             <span>{t('pushToRepository')}</span>
             <Dropdown
               value={remote}
@@ -74,29 +75,29 @@ export function PushDialog({ view, ws, t, onClose }: PushDialogProps): React.Rea
               placeholder={t('remote')}
             />
           </label>
-          <code className="dsh-gitlog-push-url" {...(remoteGroup?.url === undefined ? {} : tooltipProps(remoteGroup.url))}>{remoteGroup?.url ?? ''}</code>
+          <code className={cls('dsh-gitlog-push-url')} {...(remoteGroup?.url === undefined ? {} : tooltipProps(remoteGroup.url))}>{remoteGroup?.url ?? ''}</code>
         </div>
 
-        <h3 className="dsh-gitlog-push-title">{t('branchesToPush')}</h3>
-        <div className="dsh-gitlog-push-table">
-          <div className="dsh-gitlog-push-row dsh-gitlog-push-row-head">
+        <h3 className={cls('dsh-gitlog-push-title')}>{t('branchesToPush')}</h3>
+        <div className={cls('dsh-gitlog-push-table')}>
+          <div className={cls('dsh-gitlog-push-row dsh-gitlog-push-row-head')}>
             <span>{t('pushBranch')}</span>
             <span>{t('localBranch')}</span>
             <span>{t('remoteBranch')}</span>
             <span>{t('trackBranch')}</span>
           </div>
-          <div className="dsh-gitlog-push-scroll">
+          <div className={cls('dsh-gitlog-push-scroll')}>
             {locals.map(branch => (
-              <div key={branch.ref} className="dsh-gitlog-push-row">
+              <div key={branch.ref} className={cls('dsh-gitlog-push-row')}>
                 <input
                   type="checkbox"
                   checked={checked[branch.name] === true}
                   onChange={event => setChecked(currentChecked => ({ ...currentChecked, [branch.name]: event.target.checked }))}
                   aria-label={`${t('pushBranch')} ${branch.name}`}
                 />
-                <span className="dsh-gitlog-push-local">{branch.name}</span>
+                <span className={cls('dsh-gitlog-push-local')}>{branch.name}</span>
                 <Dropdown
-                  className="dsh-gitlog-push-target"
+                  className={cls('dsh-gitlog-push-target')}
                   value={targets[branch.name] ?? branch.name}
                   options={targetOptions}
                   onChange={value => {
@@ -120,16 +121,16 @@ export function PushDialog({ view, ws, t, onClose }: PushDialogProps): React.Rea
           </div>
         </div>
 
-        <label className="dsh-gitlog-check dsh-gitlog-push-select-all">
+        <label className={cls('dsh-gitlog-check dsh-gitlog-push-select-all')}>
           <input type="checkbox" checked={allChecked} onChange={event => toggleAll(event.target.checked)} />
           {t('selectAll')}
         </label>
-        <div className="dsh-gitlog-push-options">
-          <label className="dsh-gitlog-check">
+        <div className={cls('dsh-gitlog-push-options')}>
+          <label className={cls('dsh-gitlog-check')}>
             <input type="checkbox" checked={tags} onChange={event => setTags(event.target.checked)} />
             {t('pushAllTags')}
           </label>
-          <label className="dsh-gitlog-check">
+          <label className={cls('dsh-gitlog-check')}>
             <input type="checkbox" checked={force} onChange={event => setForce(event.target.checked)} />
             {t('forcePush')}
           </label>

@@ -1,6 +1,7 @@
 import type * as React from 'react'
 import { h } from '../runtime.js'
 import type { PullReview, Translate } from '../types.js'
+import { cls } from '../styles.js'
 
 export interface PullReviewBadgeProps {
   review: PullReview | null | undefined
@@ -21,7 +22,7 @@ export function PullReviewBadge({ review, t }: PullReviewBadgeProps): React.Reac
       ? review.changesRequested
       : 0
   return (
-    <span className={`dsh-gitlog-pull-review is-${review.state}`}>
+    <span className={cls(`dsh-gitlog-pull-review is-${review.state}`)}>
       {count > 0 ? `${label} (${count})` : label}
     </span>
   )

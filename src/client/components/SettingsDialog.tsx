@@ -4,6 +4,8 @@ import { requestVersionCheck, toApiError } from '../lib/api.js'
 import type { Translate, VersionPayload } from '../types.js'
 import { Dropdown } from './Dropdown.js'
 import { Button, DialogActions } from './Button.js'
+import { ShortcutSettings } from './ShortcutSettings.js'
+import { cls } from '../styles.js'
 
 const LIMITS = [25, 50, 100, 200, 0] as const
 
@@ -65,25 +67,25 @@ export function SettingsDialog({ limit, t, onChange, onClose }: SettingsDialogPr
 
   return (
     <div
-      className="dsh-gitlog-settings-backdrop"
+      className={cls('dsh-gitlog-settings-backdrop')}
       onClick={event => {
         if (event.target === event.currentTarget) onClose()
       }}
     >
-      <div className="dsh-gitlog-settings" role="dialog" aria-modal="true" aria-label={t('settings')}>
-        <div className="dsh-gitlog-settings-head">
+      <div className={cls('dsh-gitlog-settings')} role="dialog" aria-modal="true" aria-label={t('settings')}>
+        <div className={cls('dsh-gitlog-settings-head')}>
           <h2>{t('settings')}</h2>
           <button
             type="button"
-            className="dsh-gitlog-settings-close"
+            className={cls('dsh-gitlog-settings-close')}
             onClick={onClose}
             aria-label={t('close')}
           >
             ×
           </button>
         </div>
-        <div className="dsh-gitlog-settings-body">
-          <label className="dsh-gitlog-field">
+        <div className={cls('dsh-gitlog-settings-body')}>
+          <label className={cls('dsh-gitlog-field')}>
             <span>{t('pageSize')}</span>
             <Dropdown
               value={String(limit)}
@@ -96,29 +98,31 @@ export function SettingsDialog({ limit, t, onChange, onClose }: SettingsDialogPr
               autoFocus
             />
           </label>
-          <p className="dsh-gitlog-settings-hint">{t('settingsHint')}</p>
+          <p className={cls('dsh-gitlog-settings-hint')}>{t('settingsHint')}</p>
 
-          <div className="dsh-gitlog-settings-section">
+          <ShortcutSettings t={t} />
+
+          <div className={cls('dsh-gitlog-settings-section')}>
             <h3>{t('versionSection')}</h3>
-            <p className="dsh-gitlog-settings-hint">
+            <p className={cls('dsh-gitlog-settings-hint')}>
               {t('currentVersion').replace('{version}', __GIT_SUITE_VERSION__)}
             </p>
             <Button onClick={() => { void check() }} disabled={checking}>
               {checking ? t('checkingUpdate') : t('checkUpdate')}
             </Button>
-            {checkError === null ? null : <p className="dsh-gitlog-note" role="alert">{checkError}</p>}
+            {checkError === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{checkError}</p>}
             {result !== null && result.updateAvailable
-              ? <p className="dsh-gitlog-note" role="status">{t('updateAvailable').replace('{version}', result.latest)}</p>
+              ? <p className={cls('dsh-gitlog-note')} role="status">{t('updateAvailable').replace('{version}', result.latest)}</p>
               : null}
             {result !== null && result.updateAvailable
-              ? <p className="dsh-gitlog-settings-hint">{t('updateHint')}</p>
+              ? <p className={cls('dsh-gitlog-settings-hint')}>{t('updateHint')}</p>
               : null}
             {result !== null && !result.updateAvailable
-              ? <p className="dsh-gitlog-note" role="status">{t('updateUpToDate')}</p>
+              ? <p className={cls('dsh-gitlog-note')} role="status">{t('updateUpToDate')}</p>
               : null}
           </div>
         </div>
-        <DialogActions className="dsh-gitlog-settings-actions">
+        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
           <Button variant="primary" onClick={onClose}>{t('close')}</Button>
         </DialogActions>
       </div>

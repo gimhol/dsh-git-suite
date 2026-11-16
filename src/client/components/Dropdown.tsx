@@ -1,6 +1,7 @@
 import type * as React from 'react'
 import { h, useEffect, useRef, useState } from '../runtime.js'
 import { tooltipProps } from './Tooltip.js'
+import { cls } from '../styles.js'
 
 export interface DropdownOption {
   value: string
@@ -43,7 +44,7 @@ function groupOptions(options: DropdownOption[]): OptionGroup[] {
 function Chevron(): React.ReactElement {
   return (
     <svg
-      className="dsh-gitlog-dropdown-chevron"
+      className={cls('dsh-gitlog-dropdown-chevron')}
       width="12"
       height="12"
       viewBox="0 0 24 24"
@@ -182,14 +183,14 @@ export function Dropdown({
   return (
     <div
       ref={rootRef}
-      className={`dsh-gitlog-dropdown${className === undefined ? '' : ` ${className}`}`}
+      className={cls(`dsh-gitlog-dropdown${className === undefined ? '' : ` ${className}`}`)}
     >
       {searchable
         ? (
-            <div ref={triggerRef} className="dsh-gitlog-dropdown-control">
+            <div ref={triggerRef} className={cls('dsh-gitlog-dropdown-control')}>
               <input
                 ref={searchRef}
-                className="dsh-gitlog-dropdown-input"
+                className={cls('dsh-gitlog-dropdown-input')}
                 type="text"
                 value={open ? query : selectedLabel}
                 onChange={event => onSearchChange(event.target.value)}
@@ -212,7 +213,7 @@ export function Dropdown({
             <button
               ref={buttonRef}
               type="button"
-              className="dsh-gitlog-dropdown-btn"
+              className={cls('dsh-gitlog-dropdown-btn')}
               aria-haspopup="listbox"
               aria-expanded={open}
               aria-label={ariaLabel}
@@ -224,14 +225,14 @@ export function Dropdown({
               }}
               onKeyDown={onTriggerKeyDown}
             >
-              <span className="dsh-gitlog-dropdown-label">{selectedLabel}</span>
+              <span className={cls('dsh-gitlog-dropdown-label')}>{selectedLabel}</span>
               <Chevron />
             </button>
           )}
       {open
         ? (
             <div
-              className="dsh-gitlog-dropdown-menu"
+              className={cls('dsh-gitlog-dropdown-menu')}
               role="listbox"
               aria-label={ariaLabel}
               style={position === null
@@ -239,12 +240,12 @@ export function Dropdown({
                 : { left: position.left, top: position.top, minWidth: position.width }}
             >
               {filtered.length === 0
-                ? <p className="dsh-gitlog-dropdown-empty">{noMatchesLabel}</p>
+                ? <p className={cls('dsh-gitlog-dropdown-empty')}>{noMatchesLabel}</p>
                 : groups.map(group => (
-                    <div key={group.name ?? '__default'} className="dsh-gitlog-dropdown-group">
+                    <div key={group.name ?? '__default'} className={cls('dsh-gitlog-dropdown-group')}>
                       {group.name === undefined
                         ? null
-                        : <div className="dsh-gitlog-dropdown-group-label">{group.name}</div>}
+                        : <div className={cls('dsh-gitlog-dropdown-group-label')}>{group.name}</div>}
                       {group.options.map(option => {
                         const index = filtered.indexOf(option)
                         return (
@@ -253,7 +254,7 @@ export function Dropdown({
                             type="button"
                             role="option"
                             aria-selected={option.value === value}
-                            className={`dsh-gitlog-dropdown-item${index === active ? ' is-active' : ''}${option.value === value ? ' is-selected' : ''}`}
+                            className={cls(`dsh-gitlog-dropdown-item${index === active ? ' is-active' : ''}${option.value === value ? ' is-selected' : ''}`)}
                             {...(option.title === undefined ? {} : tooltipProps(option.title))}
                             onMouseEnter={() => setActive(index)}
                             onClick={() => select(option)}

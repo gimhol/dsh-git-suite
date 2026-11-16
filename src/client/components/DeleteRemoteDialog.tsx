@@ -5,6 +5,7 @@ import { requestRemoveRemote, toApiError } from '../lib/api.js'
 import type { Translate } from '../types.js'
 import { DialogShell } from './DialogShell.js'
 import { Button, DialogActions } from './Button.js'
+import { cls } from '../styles.js'
 
 export interface DeleteRemoteDialogProps {
   view: GitLogView
@@ -36,8 +37,8 @@ export function DeleteRemoteDialog({ view, remote, t, onClose }: DeleteRemoteDia
 
   return (
     <DialogShell title={t('remoteRemoveTitle')} t={t} onClose={onClose}>
-      <p className="dsh-gitlog-note">{t('remoteRemoveConfirm').replace('{remote}', remote)}</p>
-      {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
+      <p className={cls('dsh-gitlog-note')}>{t('remoteRemoveConfirm').replace('{remote}', remote)}</p>
+      {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
       <DialogActions>
         <Button onClick={onClose}>{t('cancel')}</Button>
         <Button variant="danger" disabled={busy} onClick={() => { void confirm() }}>

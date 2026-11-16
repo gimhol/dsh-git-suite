@@ -60,6 +60,15 @@ DSH loads built artifacts from `dist/` and never compiles TypeScript; installing
 
 After changing entry paths in `package.json`, restart DSH (or disable and re-enable the plugin row) so the new entry paths are read.
 
+## Shortcuts
+
+Both entries are DSH catalog commands: rebind or clear them in **Settings → Shortcuts**, and the Start page shows their keycaps. The panel's own Settings dialog (gear icon) lists the same two commands, where a combination can be recorded, cleared (leaving the action unbound), or reset to its default.
+
+| Action | Default |
+|---|---|
+| Open the Git Suite tab in the right sidebar | `Ctrl/Cmd+Shift+G` |
+| Open the Git Suite page in the main column | `Ctrl/Cmd+Shift+P` |
+
 ## Build
 
 ```sh

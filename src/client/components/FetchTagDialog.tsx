@@ -5,6 +5,7 @@ import { requestSync, toApiError } from '../lib/api.js'
 import type { Translate } from '../types.js'
 import { Button, DialogActions } from './Button.js'
 import { DialogShell } from './DialogShell.js'
+import { cls } from '../styles.js'
 
 export interface FetchTagDialogProps {
   view: GitLogView
@@ -42,10 +43,10 @@ export function FetchTagDialog({ view, tag, remote, t, onFetched, onClose }: Fet
 
   return (
     <DialogShell title={t('fetchTagTitle')} t={t} onClose={onClose}>
-      <p className="dsh-gitlog-warning" role="alert">
+      <p className={cls('dsh-gitlog-warning')} role="alert">
         {t('fetchTagConfirm').replace('{tag}', tag).replace('{remote}', remote)}
       </p>
-      {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
+      {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
       <DialogActions>
         <Button onClick={onClose}>{t('cancel')}</Button>
         <Button variant="danger" disabled={busy} onClick={() => { void confirm() }}>

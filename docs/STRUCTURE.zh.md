@@ -113,7 +113,7 @@ src/
     locales/
       en.ts
       zh.ts
-    styles.scss
+    styles.module.scss
     styles.ts
 scripts/build-client.mjs
 tsconfig.json
@@ -148,7 +148,7 @@ LICENSE
 | `host/pick-handler.ts` | POST `/git-suite/pick-directory`：调用 `ctx.directoryPicker` 的原生选择器；`mode: 'repo'`（默认）解析 Git 根并检查 DSH 工作区，`mode: 'directory'` 返回普通目录供克隆目标使用 |
 | `host/sync-handler.ts` | `POST /git-suite/sync`：`fetch` 支持 `fetchAll`/`prune`/`tags`/`forceTags`（对应 `--all`/`--prune`/`--tags`/`--force`），也可只获取指定 `remote`；`pull` 按所选 `remote`/`branch` 拉取；`push` 按 `refs`（本地分支→远程分支，可逐项 `track`）推送，支持单个标签（`tagRefs`）、全部标签（`tags`）与 `force`；`fetch-tag` 用远端覆盖单个本地标签；认证失败返回 `401 auth-required`，附带远端名、URL 协议与已配置的凭据助手 |
 | `host/remote-handler.ts` | `POST /git-suite/remote`：新增（`action: 'add'`）、改名和/或修改地址（`action: 'set-url'`）或删除（`action: 'remove'`）指定远端，会校验名称、地址格式以及是否已存在 |
-| `host/branch-action-handler.ts` | `POST /git-suite/branch-action`：本地分支的 `merge`/`rebase`/`rename`/`delete`；把当前分支变基到任意引用（`rebase-onto`，目标用 `rev-parse --verify` 解析，遇到冲突返回 `409 operation-conflict`）；以远端分支为起点检出为本地跟踪分支（`track`）；删除远端上的分支（`delete-remote`，即 `push --delete`）；校验分支名/远端名，失败返回 git 错误详情 |
+| `host/branch-action-handler.ts` | `POST /git-suite/branch-action`：本地分支的 `merge`/`rebase`/`rename`/`delete`；把当前分支变基到任意引用（`rebase-onto`，目标用 `rev-parse --verify` 解析，遇到冲突返回 `409 operation-conflict`）；以远端分支为起点检出为本地跟踪分支（`track`）：默认名已被无关本地分支占用时返回 `409 local-branch-exists`，带 `local`/`remote`/`upstream` 与一个可用的 `suggested` 名称；已有本地分支正好跟踪该远端引用时直接切换过去；显式传 `newName` 则按该名建跟踪分支；把本地分支改为跟踪另一条远端分支，或取消跟踪（`upstream`，即 `branch --set-upstream-to` / `--unset-upstream`，找不到远端分支返回 `404 upstream-not-found`，本来就没有上游返回 `409 no-upstream`）；删除远端上的分支（`delete-remote`，即 `push --delete`）；校验分支名/远端名，失败返回 git 错误详情 |
 | `host/dsh.ts` | 本插件使用的 DSH host 类型，包括 `webServer`、工作区、`directoryPicker`、`llm` 与 `agentDefaultModel` |
 | `host/http.ts` | JSON 响应、错误序列化、同源与私有头校验；`readJsonBody`（Content-Length/实际字节上限）与 `sendResponse`（已关闭响应保护） |
 | `host/forge-post.ts` | 写操作路由公共流程：私有头、POST、body 上限、超时、repository/remote/forge/token 解析与错误回写 |
@@ -197,7 +197,7 @@ LICENSE
 | `client/hooks/useGitLogView.ts` | 项目扫描、引用树、分页日志、详情选择与分页动作 |
 | `client/hooks/useWorkspace.ts` | 工作区状态、单文件 diff、暂存/取消暂存、提交动作与 AI 生成提交信息 |
 | `client/hooks/usePulls.ts` | PR 视图状态：受支持的远端与默认远端、开放中/已关闭/全部筛选、列表与详情请求、401 时的令牌对话框、检出后的刷新；只有 PR 视图可见时才请求 |
-| `client/components/PullsPane.tsx` | PR 页面：远端/筛选工具栏、虚拟列表、详情（描述、讨论、AI 审查、CI 状态、提交、文件与可切换布局的差异）、在浏览器打开、检出到本地、合并、关闭/重新打开；当前分支已有 PR 时显示编号入口 |
+| `client/components/PullsPane.tsx` | PR 页面：远端/筛选工具栏、虚拟列表、详情（描述、讨论、AI 审查、CI 状态、提交、文件与可切换布局的差异）、在浏览器打开、检出、合并、关闭/重新打开；当前分支已有 PR 时显示编号入口 |
 | `client/components/MergePullDialog.tsx` | 合并确认：合并方式、删除源分支、阻止合并/检查失败提示；Gitee 额外提供「审查通过」「测试通过」按钮 |
 | `client/components/DeletePullDialog.tsx` | GitLab MR 的危险删除确认，必须勾选不可恢复提示 |
 | `client/components/PullApprovalBadges.tsx` | Gitee 审查/测试状态徽章（未指派/待通过/部分通过/已通过） |
@@ -221,8 +221,8 @@ LICENSE
 | `client/lib/ui-state.ts` | 面板状态持久化（localStorage）：按仓库分桶（`repos[normalizeRepoKey(repoRoot)]`，含视图、过滤、分栏尺寸、树展开、草稿）+ 真正全局的偏好（diff 布局、打开快捷键）；旧版扁平字段继续作为每个仓库的回退值 |
 | `client/lib/format.ts` | 绝对日期时间格式化（中文 `2026-10-25 03:10:45`，英文 `Oct 25, 2026, 03:10:45`） |
 | `client/locales/` | 英文与中文文案，key 集合由英文定义 |
-| `client/styles.scss` | SCSS 样式源文件 |
-| `client/styles.ts` | 导出内联进产物的 CSS 字符串 |
+| `client/styles.module.scss` | CSS Module 样式源文件，类名由 esbuild 哈希 |
+| `client/styles.ts` | 挂载已哈希的样式文本，并导出 `cls()` 解析类名 |
 
 ## 引用树
 
@@ -307,7 +307,7 @@ LICENSE
 - **加载**：只有 PR 视图可见时才请求 `mode=pulls`；首次取 30 条，滚到底或列表未填满时自动用 `page` 取下一页并追加（客户端上限 300 条）。列表按固定行高虚拟滚动，只渲染可见窗口；刷新按钮重置到第一页并带 `fresh=1` 跳过宿主缓存，开放中/已关闭/全部筛选和切换远端也会重置分页。
 - **列表**：编号、标题、作者、源分支 → 目标分支、更新时间与状态胶囊（打开/草稿/已合并/已关闭）；工具栏搜索框按编号/标题/作者/分支过滤已加载的条目；行高固定，列表虚拟滚动。
 - **调整大小**：列表与详情之间是一条可拖拽分割线；宽布局调列表宽度，窄布局调列表高度，双击复位，尺寸按仓库分别记住。
-- **详情**：`mode=pull&number=…` 返回描述、讨论、改动文件（含补丁）、提交、CI 状态与可合并状态；描述、讨论和 AI 审查都用安全 Markdown 渲染；每个模块（描述/AI 审查/文件/提交/讨论）都有可收起的标题行，讨论固定在最后。文件差异复用 `DiffView`，并把文件路径传给它做语法高亮；分栏/统一布局沿用全局 `diffMode` 偏好。详情元信息显示仓库归属（跨仓库为 `head → base`），工具栏也以胶囊显示当前列表所属仓库，避免多远端/ fork 场景下混淆。「在浏览器打开」是普通链接（只接受 http/https），「检出到本地」走 `POST /git-suite/pr`；检出前先执行 `git status --porcelain`，有未提交内容直接返回 `409 worktree-dirty`（带文件和数量），不会先 fetch/切分支。打开状态显示「合并」（`POST /git-suite/pr-merge`，可选 merge/squash/rebase 与删除源分支）和「关闭」（`POST /git-suite/pr-close`），已关闭状态显示「重新打开」（`POST /git-suite/pr-reopen`），都会先二次确认。工具栏的「创建 PR」打开表单：源分支为当前分支（必须是远端已有分支），目标分支从远端分支中选择，可填标题/描述/草稿，提交走 `POST /git-suite/pr-create`。详情工具栏的「AI 审查」点击后先弹窗选择上下文方式（临时 worktree / 平台 API / 仅 diff，选择持久化到 localStorage），再调用 `POST /git-suite/pr-ai-review`；宿主按所选方式读取完整文件（临时 worktree 读取后立即删除、不执行代码），再用 `ctx.llm` 的默认模型生成只读 Markdown，不写平台；客户端显示 loading/错误/结果，可重新审查或停止/清除；流式 NDJSON 会实时推送 `reasoning`/`text` 进度，重试时先发 `retry`。列表与详情在视图活跃时每 60 秒静默刷新第一页与当前详情。
+- **详情**：`mode=pull&number=…` 返回描述、讨论、改动文件（含补丁）、提交、CI 状态与可合并状态；描述、讨论和 AI 审查都用安全 Markdown 渲染；每个模块（描述/AI 审查/文件/提交/讨论）都有可收起的标题行，讨论固定在最后。文件差异复用 `DiffView`，并把文件路径传给它做语法高亮；分栏/统一布局沿用全局 `diffMode` 偏好。详情元信息显示仓库归属（跨仓库为 `head → base`），工具栏也以胶囊显示当前列表所属仓库，避免多远端/ fork 场景下混淆。「在浏览器打开」是普通链接（只接受 http/https），「检出」走 `POST /git-suite/pr`；检出前先执行 `git status --porcelain`，有未提交内容直接返回 `409 worktree-dirty`（带文件和数量），不会先 fetch/切分支。打开状态显示「合并」（`POST /git-suite/pr-merge`，可选 merge/squash/rebase 与删除源分支）和「关闭」（`POST /git-suite/pr-close`），已关闭状态显示「重新打开」（`POST /git-suite/pr-reopen`），都会先二次确认。工具栏的「创建 PR」打开表单：源分支为当前分支（必须是远端已有分支），目标分支从远端分支中选择，可填标题/描述/草稿，提交走 `POST /git-suite/pr-create`。详情工具栏的「AI 审查」点击后先弹窗选择上下文方式（临时 worktree / 平台 API / 仅 diff，选择持久化到 localStorage），再调用 `POST /git-suite/pr-ai-review`；宿主按所选方式读取完整文件（临时 worktree 读取后立即删除、不执行代码），再用 `ctx.llm` 的默认模型生成只读 Markdown，不写平台；客户端显示 loading/错误/结果，可重新审查或停止/清除；流式 NDJSON 会实时推送 `reasoning`/`text` 进度，重试时先发 `retry`。列表与详情在视图活跃时每 60 秒静默刷新第一页与当前详情。
 - **认证**：平台返回 401 时弹出 `ForgeAuthDialog`；令牌是必填项，账号名可选（Gitee 个人仓库会预填 owner，留空时宿主调用平台 `/user` 解析出真实登录名）。令牌经 `POST /git-suite/credential { forge: true }` 交给仓库的凭据助手保存（SSH 远端也按平台 host 存成 HTTPS 凭据），随后自动重试。也可以改用 `GITHUB_TOKEN`/`GITEE_TOKEN`/`GITLAB_TOKEN` 或 `gh` 的登录态；令牌只在宿主进程使用。
 - **检出**：成功后刷新工作区与引用树；本地分支名固定为 `pr/<编号>`，已存在时直接切换而不移动它。
 
@@ -326,7 +326,7 @@ LICENSE
 
 1. `tsc -p tsconfig.json` 做全量类型检查（`noEmit`）。
 2. `tsc -p tsconfig.host.json` 把 `src/host/` 编译到 `dist/`，入口是 `dist/index.js`。
-3. `node scripts/build-client.mjs`：先用 `sass.compile()` 把 `src/client/styles.scss` 编译为 `src/client/styles.generated.css`，再调用 esbuild 把 `src/client/index.tsx` 打包为 `dist/client.js`（含 source map），CSS 通过 `--loader:.css=text` 内联进产物。
+3. `node scripts/build-client.mjs`：先用 `sass.compile()` 把 `src/client/styles.module.scss` 编译为 `styles.module.css`，跑一次 esbuild 让 `.module.css` 按 CSS Module 处理（类名全部哈希），把哈希后的样式写入 `src/client/styles.generated.css`，再调用 esbuild 把 `src/client/index.tsx` 打包为 `dist/client.js`（含 source map），CSS 通过 `--loader:.css=text` 内联进产物。构建期还有类名校验：`cls()` 里出现样式表没定义的类名、或 `cls()` 之外出现原始 `dsh-gitlog-*` 字符串，都会让构建失败。
 
 ### 为什么客户端仍要打包
 
@@ -334,9 +334,10 @@ DSH 每个包只通过 `exports["./client"]` 加载一个惰性工厂（`window.
 
 ### 产物与开发
 
-- `dist/` 和 `src/client/styles.generated.css` 都是构建产物，已被 Git 忽略；克隆后先 `pnpm install && pnpm build`，DSH 插件管理器不会替你构建。
-- `pnpm watch:client` 监听 `src/client/` 与 `styles.scss`，SCSS 改动会重新编译并触发 esbuild 重建；DSH HMR 监听 `dist/client.js`，重建后页面会重新加载该插件。
+- `dist/`、`src/client/styles.module.css` 和 `src/client/styles.generated.css` 都是构建产物，已被 Git 忽略；克隆后先 `pnpm install && pnpm build`，DSH 插件管理器不会替你构建。
+- `pnpm watch:client` 监听 `src/client/`，任何改动都会重跑样式、哈希与打包；DSH HMR 监听 `dist/client.js`，重建后页面会重新加载该插件。
 - 修改 `package.json` 的入口路径后，需要重启 DSH（或在插件页禁用再启用该插件），因为运行中的 Host 会缓存插件清单。
+
 
 
 

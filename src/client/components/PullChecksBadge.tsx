@@ -1,6 +1,7 @@
 import type * as React from 'react'
 import { h } from '../runtime.js'
 import type { PullChecks, Translate } from '../types.js'
+import { cls } from '../styles.js'
 
 export interface PullChecksBadgeProps {
   checks: PullChecks | null | undefined
@@ -20,14 +21,14 @@ export function PullChecksBadge({ checks, t }: PullChecksBadgeProps): React.Reac
           ? t('pullChecksNeutral')
           : t('pullChecksUnknown')
   const content = (
-    <span className={`dsh-gitlog-pull-checks is-${checks.state}`}>
+    <span className={cls(`dsh-gitlog-pull-checks is-${checks.state}`)}>
       {checks.total > 1 ? `${label} (${checks.total})` : label}
     </span>
   )
   if (checks.url === null || !/^https?:\/\//i.test(checks.url)) return content
   return (
     <a
-      className="dsh-gitlog-pull-checks-link"
+      className={cls('dsh-gitlog-pull-checks-link')}
       href={checks.url}
       target="_blank"
       rel="noreferrer noopener"

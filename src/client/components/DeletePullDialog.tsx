@@ -4,6 +4,7 @@ import type { PullsView } from '../hooks/usePulls.js'
 import type { Translate } from '../types.js'
 import { Button, DialogActions } from './Button.js'
 import { DialogShell } from './DialogShell.js'
+import { cls } from '../styles.js'
 
 export interface DeletePullDialogProps {
   view: PullsView
@@ -32,10 +33,10 @@ export function DeletePullDialog({ view, number, t, onClose }: DeletePullDialogP
 
   return (
     <DialogShell title={t('pullDeleteTitle')} t={t} onClose={onClose}>
-      <p className="dsh-gitlog-note">{`#${number}`}</p>
-      <p className="dsh-gitlog-danger-text">{t('pullDeleteWarning')}</p>
-      <p className="dsh-gitlog-field-hint">{t('pullDeleteHint')}</p>
-      <label className="dsh-gitlog-check">
+      <p className={cls('dsh-gitlog-note')}>{`#${number}`}</p>
+      <p className={cls('dsh-gitlog-danger-text')}>{t('pullDeleteWarning')}</p>
+      <p className={cls('dsh-gitlog-field-hint')}>{t('pullDeleteHint')}</p>
+      <label className={cls('dsh-gitlog-check')}>
         <input
           type="checkbox"
           checked={confirmed}
@@ -43,7 +44,7 @@ export function DeletePullDialog({ view, number, t, onClose }: DeletePullDialogP
         />
         {t('pullDeleteConfirm')}
       </label>
-      {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
+      {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
       <DialogActions>
         <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
         <Button

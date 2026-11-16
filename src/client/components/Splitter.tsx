@@ -1,5 +1,6 @@
 import type * as React from 'react'
 import { h, useRef, useState } from '../runtime.js'
+import { cls } from '../styles.js'
 
 export interface SplitterProps {
   /** A vertical bar resizes widths; a horizontal bar resizes heights. */
@@ -36,7 +37,7 @@ export function Splitter({ orientation, label, onStart, onDrag, onEnd, onReset, 
       tabIndex={0}
       aria-label={label}
       aria-orientation={orientation}
-      className={`dsh-gitlog-split is-${orientation}${dragging ? ' is-dragging' : ''}${className === undefined ? '' : ` ${className}`}`}
+      className={cls(`dsh-gitlog-split is-${orientation}${dragging ? ' is-dragging' : ''}${className === undefined ? '' : ` ${className}`}`)}
       onPointerDown={event => {
         if (event.button !== 0) return
         event.preventDefault()

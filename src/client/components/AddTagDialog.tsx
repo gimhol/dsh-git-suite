@@ -6,6 +6,7 @@ import type { Commit, ResolvePayload, Translate } from '../types.js'
 import { Button, DialogActions } from './Button.js'
 import { CommitRefField } from './CommitRefField.js'
 import { DialogShell } from './DialogShell.js'
+import { cls } from '../styles.js'
 
 export interface AddTagDialogProps {
   view: GitLogView
@@ -80,9 +81,9 @@ export function AddTagDialog({ view, t, onClose }: AddTagDialogProps): React.Rea
     return (
       <DialogShell title={t('tagDialogTitle')} t={t} onClose={onClose}>
         {error === null
-          ? <p className="dsh-gitlog-note">{t('loadingCommit')}</p>
-          : <p className="dsh-gitlog-note" role="alert">{error}</p>}
-        <DialogActions className="dsh-gitlog-settings-actions">
+          ? <p className={cls('dsh-gitlog-note')}>{t('loadingCommit')}</p>
+          : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
+        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
           <Button onClick={onClose}>{t('close')}</Button>
         </DialogActions>
       </DialogShell>
@@ -91,8 +92,8 @@ export function AddTagDialog({ view, t, onClose }: AddTagDialogProps): React.Rea
 
   return (
     <DialogShell title={t('tagDialogTitle')} t={t} onClose={onClose}>
-      <div className="dsh-gitlog-repo-form">
-        <label className="dsh-gitlog-field">
+      <div className={cls('dsh-gitlog-repo-form')}>
+        <label className={cls('dsh-gitlog-field')}>
           <span>{t('tagName')}</span>
           <input
             type="text"
@@ -118,10 +119,10 @@ export function AddTagDialog({ view, t, onClose }: AddTagDialogProps): React.Rea
           onChange={setBase}
           onSubmit={() => { void save() }}
         />
-        <label className="dsh-gitlog-field">
+        <label className={cls('dsh-gitlog-field')}>
           <span>{t('tagMessage')}</span>
           <textarea
-            className="dsh-gitlog-workspace-message"
+            className={cls('dsh-gitlog-workspace-message')}
             value={message}
             onChange={event => setMessage(event.target.value)}
             placeholder={t('tagMessagePlaceholder')}
@@ -129,8 +130,8 @@ export function AddTagDialog({ view, t, onClose }: AddTagDialogProps): React.Rea
             spellCheck={false}
           />
         </label>
-        {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
-        <DialogActions className="dsh-gitlog-settings-actions">
+        {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
+        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
           <Button onClick={onClose}>{t('cancel')}</Button>
           <Button type="button" variant="primary" disabled={busy} onClick={() => { void save() }}>
             {busy ? t('tagSaving') : t('tagSave')}

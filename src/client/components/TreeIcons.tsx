@@ -1,10 +1,11 @@
 import type * as React from 'react'
 import { h } from '../runtime.js'
+import { cls } from '../styles.js'
 
 export function ChevronIcon({ open }: { open: boolean }): React.ReactElement {
   return (
     <svg
-      className={`dsh-gitlog-tree-chevron${open ? ' is-open' : ''}`}
+      className={cls(`dsh-gitlog-tree-chevron${open ? ' is-open' : ''}`)}
       width="12"
       height="12"
       viewBox="0 0 12 12"
@@ -20,7 +21,7 @@ export function ChevronIcon({ open }: { open: boolean }): React.ReactElement {
 export function CurrentBranchIcon(): React.ReactElement {
   return (
     <svg
-      className="dsh-gitlog-tree-current"
+      className={cls('dsh-gitlog-tree-current')}
       width="12"
       height="12"
       viewBox="0 0 12 12"

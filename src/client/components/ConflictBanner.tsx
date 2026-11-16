@@ -2,6 +2,7 @@ import type * as React from 'react'
 import { h } from '../runtime.js'
 import type { OperationPayload, Translate } from '../types.js'
 import { Button } from './Button.js'
+import { cls } from '../styles.js'
 
 export interface ConflictBannerProps {
   operation: OperationPayload
@@ -28,14 +29,14 @@ export function ConflictBanner({
   const name = operation.operation
   const remaining = operation.conflicts.length
   return (
-    <div className="dsh-gitlog-conflict" role="alert">
+    <div className={cls('dsh-gitlog-conflict')} role="alert">
       <strong>{t('conflictOperation').replace('{operation}', name)}</strong>
-      <span className="dsh-gitlog-conflict-count">
+      <span className={cls('dsh-gitlog-conflict-count')}>
         {remaining === 0
           ? t('conflictAllResolved')
           : t('conflictFilesCount').replace('{count}', String(remaining))}
       </span>
-      <span className="dsh-gitlog-conflict-actions">
+      <span className={cls('dsh-gitlog-conflict-actions')}>
         <Button disabled={busy} onClick={onContinue}>{t('conflictContinue')}</Button>
         {name === 'merge' ? null : <Button disabled={busy} onClick={onSkip}>{t('conflictSkip')}</Button>}
         <Button variant="danger" disabled={busy} onClick={onAbort}>{t('conflictAbortAction')}</Button>

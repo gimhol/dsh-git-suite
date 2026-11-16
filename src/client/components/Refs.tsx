@@ -1,6 +1,7 @@
 import type * as React from 'react'
 import { h } from '../runtime.js'
 import { tooltipProps } from './Tooltip.js'
+import { cls } from '../styles.js'
 
 export interface RefsProps {
   refs: readonly string[]
@@ -15,11 +16,11 @@ export interface RefsProps {
 export function Refs({ refs, onRefContextMenu }: RefsProps): React.ReactElement | null {
   if (refs.length === 0) return null
   return (
-    <span className="dsh-gitlog-refs">
+    <span className={cls('dsh-gitlog-refs')}>
       {refs.map(ref => (
         <span
           key={ref}
-          className={`dsh-gitlog-ref${ref.startsWith('HEAD') ? ' is-head' : ''}`}
+          className={cls(`dsh-gitlog-ref${ref.startsWith('HEAD') ? ' is-head' : ''}`)}
           onContextMenu={onRefContextMenu === undefined
             ? undefined
             : event => {

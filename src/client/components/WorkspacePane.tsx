@@ -18,6 +18,7 @@ import { FileActionDialog } from './FileActionDialog.js'
 import { IgnoreFileDialog } from './IgnoreFileDialog.js'
 import { StashCreateDialog } from './StashCreateDialog.js'
 import type { ConflictFile, OperationPayload, Translate, WorkspaceFile, WorkspaceScope } from '../types.js'
+import { cls } from '../styles.js'
 
 function scopeOf(file: WorkspaceFile): WorkspaceScope {
   if (file.staged) return 'staged'
@@ -298,7 +299,7 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
     return (
       <div
         key={`${scope}:${file.path}`}
-        className={`dsh-gitlog-workspace-file${selected ? ' is-selected' : ''}`}
+        className={cls(`dsh-gitlog-workspace-file${selected ? ' is-selected' : ''}`)}
         {...tooltipProps(() => rowHint(file))}
         onClick={() => ws.selectFile(file.path, scope)}
         onDoubleClick={() => toggleStage(file, scope)}
@@ -315,33 +316,33 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
           onChange={() => toggleCheck(group, file.path)}
           aria-label={file.path}
         />
-        <span className={`dsh-gitlog-workspace-status ${statusTone(file.status)}${conflicted ? ' is-conflict' : ''}`}>
+        <span className={cls(`dsh-gitlog-workspace-status ${statusTone(file.status)}${conflicted ? ' is-conflict' : ''}`)}>
           {file.status}
         </span>
         {conflicted
           ? (
               <span
-                className="dsh-gitlog-workspace-conflict"
+                className={cls('dsh-gitlog-workspace-conflict')}
                 {...tooltipProps(t('statusConflicted'))}
               >
                 <ConflictIcon size={12} />
               </span>
             )
           : null}
-        <span className="dsh-gitlog-workspace-path">
+        <span className={cls('dsh-gitlog-workspace-path')}>
           {file.path}
         </span>
         {file.binary
-          ? <span className="dsh-gitlog-binary">{t('binary')}</span>
+          ? <span className={cls('dsh-gitlog-binary')}>{t('binary')}</span>
           : (
-              <span className="dsh-gitlog-workspace-stats">
-                {file.additions === null ? null : <span className="dsh-gitlog-add">{`+${file.additions}`}</span>}
-                {file.deletions === null ? null : <span className="dsh-gitlog-del">{`-${file.deletions}`}</span>}
+              <span className={cls('dsh-gitlog-workspace-stats')}>
+                {file.additions === null ? null : <span className={cls('dsh-gitlog-add')}>{`+${file.additions}`}</span>}
+                {file.deletions === null ? null : <span className={cls('dsh-gitlog-del')}>{`-${file.deletions}`}</span>}
               </span>
             )}
         <button
           type="button"
-          className="dsh-gitlog-workspace-file-action"
+          className={cls('dsh-gitlog-workspace-file-action')}
                     aria-label={conflicted ? t('markResolved') : scope === 'staged' ? t('unstageFile') : t('stageFile')}
           onClick={event => {
             event.stopPropagation()
@@ -448,10 +449,10 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
       }
     }
     return (
-      <section className="dsh-gitlog-workspace-section" style={style} ref={nodeRef}>
-        <div className="dsh-gitlog-workspace-section-head">
+      <section className={cls('dsh-gitlog-workspace-section')} style={style} ref={nodeRef}>
+        <div className={cls('dsh-gitlog-workspace-section-head')}>
           <h3>{`${isStaged ? t('stagedFiles') : t('unstagedFiles')} (${files.length})`}</h3>
-          <span className="dsh-gitlog-workspace-section-actions">
+          <span className={cls('dsh-gitlog-workspace-section-actions')}>
             <Button
               disabled={!hasChecked || ws.actionState === 'loading'}
               onClick={selectedAction}
@@ -477,9 +478,9 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
                 )}
           </span>
         </div>
-        <div className="dsh-gitlog-workspace-list">
+        <div className={cls('dsh-gitlog-workspace-list')}>
           {files.length === 0
-            ? <p className="dsh-gitlog-workspace-empty">{isStaged ? t('noStaged') : t('noUnstaged')}</p>
+            ? <p className={cls('dsh-gitlog-workspace-empty')}>{isStaged ? t('noStaged') : t('noUnstaged')}</p>
             : files.map(file => fileRow(file))}
         </div>
       </section>
@@ -493,18 +494,18 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
   const commitForm = (
     <div
       ref={formRef}
-      className="dsh-gitlog-workspace-commit"
+      className={cls('dsh-gitlog-workspace-commit')}
       style={narrow
         ? (narrowCommitSize.touched ? { flex: '0 0 auto', height: `${narrowCommitSize.size}px` } : undefined)
         : { flex: '0 1 auto', height: `${commitSize.size}px` }}
     >
-      <div className="dsh-gitlog-workspace-message-head">
+      <div className={cls('dsh-gitlog-workspace-message-head')}>
         <span>{t('commitMessage')}</span>
-        <span className="dsh-gitlog-workspace-author" {...tooltipProps(authorLabel)}>{authorLabel}</span>
+        <span className={cls('dsh-gitlog-workspace-author')} {...tooltipProps(authorLabel)}>{authorLabel}</span>
       </div>
       <textarea
         ref={messageRef}
-        className="dsh-gitlog-workspace-message"
+        className={cls('dsh-gitlog-workspace-message')}
         value={ws.message}
         placeholder={t('commitMessage')}
         onChange={event => {
@@ -532,9 +533,9 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
         rows={3}
         spellCheck={false}
       />
-      {ws.generateError !== null ? <p className="dsh-gitlog-note" role="alert">{ws.generateError.message}</p> : null}
-      <div className="dsh-gitlog-workspace-options">
-        <label className="dsh-gitlog-check">
+      {ws.generateError !== null ? <p className={cls('dsh-gitlog-note')} role="alert">{ws.generateError.message}</p> : null}
+      <div className={cls('dsh-gitlog-workspace-options')}>
+        <label className={cls('dsh-gitlog-check')}>
           <input
             type="checkbox"
             checked={ws.amend}
@@ -542,7 +543,7 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
           />
           {t('amendLastCommit')}
         </label>
-        <label className="dsh-gitlog-check">
+        <label className={cls('dsh-gitlog-check')}>
           <input
             type="checkbox"
             checked={ws.push}
@@ -554,12 +555,12 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
             : `${t('pushAfterCommit')} ${status.upstream}`}
         </label>
       </div>
-      {ws.note !== null ? <p className="dsh-gitlog-note" role="status">{ws.note}</p> : null}
-      {ws.actionError !== null ? <p className="dsh-gitlog-note" role="alert">{ws.actionError.message}</p> : null}
-      <div className="dsh-gitlog-workspace-commit-actions">
+      {ws.note !== null ? <p className={cls('dsh-gitlog-note')} role="status">{ws.note}</p> : null}
+      {ws.actionError !== null ? <p className={cls('dsh-gitlog-note')} role="alert">{ws.actionError.message}</p> : null}
+      <div className={cls('dsh-gitlog-workspace-commit-actions')}>
         <Button
           iconOnly
-          className="dsh-gitlog-generate-btn"
+          className={cls('dsh-gitlog-generate-btn')}
           title={ws.generateState === 'loading' ? t('generatingMessage') : t('generateMessage')}
           onClick={ws.generate}
           disabled={ws.generateState === 'loading'
@@ -586,15 +587,15 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
       : t('unstaged')
 
   const diffPane = (
-    <div className="dsh-gitlog-workspace-diff">
-      <div className="dsh-gitlog-workspace-diff-head">
+    <div className={cls('dsh-gitlog-workspace-diff')}>
+      <div className={cls('dsh-gitlog-workspace-diff-head')}>
         <h3>{t('patch')}</h3>
         {ws.selected !== null
-          ? <code className="dsh-gitlog-patch-file" {...tooltipProps(ws.selected.path)}>{`${scopeLabel} · ${ws.selected.path}`}</code>
+          ? <code className={cls('dsh-gitlog-patch-file')} {...tooltipProps(ws.selected.path)}>{`${scopeLabel} · ${ws.selected.path}`}</code>
           : null}
         <button
           type="button"
-          className="dsh-gitlog-diff-mode"
+          className={cls('dsh-gitlog-diff-mode')}
           aria-label={diffMode.mode === 'split' ? t('diffUnified') : t('diffSplit')}
           {...tooltipProps(diffMode.mode === 'split' ? t('diffUnified') : t('diffSplit'))}
           onClick={diffMode.toggle}
@@ -603,16 +604,16 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
         </button>
       </div>
       {ws.selected === null
-        ? <p className="dsh-gitlog-workspace-empty">{t('selectFileToViewDiff')}</p>
+        ? <p className={cls('dsh-gitlog-workspace-empty')}>{t('selectFileToViewDiff')}</p>
         : ws.diffState === 'loading'
-          ? <p className="dsh-gitlog-workspace-empty">{t('loadingDiff')}</p>
+          ? <p className={cls('dsh-gitlog-workspace-empty')}>{t('loadingDiff')}</p>
           : ws.diffState === 'error'
-            ? <p className="dsh-gitlog-note" role="alert">{ws.diffError?.message ?? t('unknownError')}</p>
+            ? <p className={cls('dsh-gitlog-note')} role="alert">{ws.diffError?.message ?? t('unknownError')}</p>
             : ws.diff !== null
               ? ws.diff.binary
-                ? <p className="dsh-gitlog-workspace-empty">{t('binary')}</p>
+                ? <p className={cls('dsh-gitlog-workspace-empty')}>{t('binary')}</p>
                 : (
-                    <div className="dsh-gitlog-workspace-diff-body">
+                    <div className={cls('dsh-gitlog-workspace-diff-body')}>
                       <DiffView
                         patch={ws.diff.patch}
                         t={t}
@@ -632,7 +633,7 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
                           y: event.clientY,
                         })}
                       />
-                      {ws.diff.truncated ? <p className="dsh-gitlog-note">{t('patchTruncated')}</p> : null}
+                      {ws.diff.truncated ? <p className={cls('dsh-gitlog-note')}>{t('patchTruncated')}</p> : null}
                     </div>
                   )
               : null}
@@ -640,12 +641,12 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
   )
 
   return (
-    <div className="dsh-gitlog-workspace">
-      <div className="dsh-gitlog-workspace-head">
-        <div className="dsh-gitlog-workspace-title">
+    <div className={cls('dsh-gitlog-workspace')}>
+      <div className={cls('dsh-gitlog-workspace-head')}>
+        <div className={cls('dsh-gitlog-workspace-title')}>
           {status !== null
             ? (
-                <span className="dsh-gitlog-workspace-branch" {...(status.upstream === null ? {} : tooltipProps(status.upstream))}>
+                <span className={cls('dsh-gitlog-workspace-branch')} {...(status.upstream === null ? {} : tooltipProps(status.upstream))}>
                   {status.branch}
                   {status.upstream === null
                     ? ''
@@ -654,7 +655,7 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
               )
             : null}
         </div>
-        <span className="dsh-gitlog-workspace-spacer" />
+        <span className={cls('dsh-gitlog-workspace-spacer')} />
         <Spinner size={16} active={statusSpinning} />
         <Button
           iconOnly
@@ -666,10 +667,10 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
         />
       </div>
       {path === ''
-        ? <p className="dsh-gitlog-workspace-empty">{t('workspaceNoRepo')}</p>
+        ? <p className={cls('dsh-gitlog-workspace-empty')}>{t('workspaceNoRepo')}</p>
         : ws.statusState === 'error'
           ? (
-              <div className="dsh-gitlog-workspace-empty">
+              <div className={cls('dsh-gitlog-workspace-empty')}>
                 <p>{ws.statusError?.message ?? t('unknownError')}</p>
                 <Button onClick={ws.refresh}>{t('tryAgain')}</Button>
               </div>
@@ -677,12 +678,12 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
           : (
               <div
                 ref={bodyRef}
-                className="dsh-gitlog-workspace-body"
+                className={cls('dsh-gitlog-workspace-body')}
                 style={narrow ? undefined : { gridTemplateColumns: `${filesSize.size}px 6px minmax(0, 1fr)` }}
               >
                 <div
                   ref={filesRef}
-                  className="dsh-gitlog-workspace-files"
+                  className={cls('dsh-gitlog-workspace-files')}
                   style={narrow && narrowFilesSize.touched
                     ? { flex: '0 0 auto', height: `${narrowFilesSize.size}px` }
                     : undefined}
@@ -754,7 +755,7 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
         : (
             <div
               ref={menuRef}
-              className="dsh-gitlog-commit-menu dsh-gitlog-file-menu"
+              className={cls('dsh-gitlog-commit-menu dsh-gitlog-file-menu')}
               style={{
                 left: Math.min(fileMenu.x, window.innerWidth - 220),
                 top: Math.min(fileMenu.y, window.innerHeight - 100),
@@ -839,7 +840,7 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
         : (
             <div
               ref={lineMenuRef}
-              className="dsh-gitlog-commit-menu dsh-gitlog-file-menu"
+              className={cls('dsh-gitlog-commit-menu dsh-gitlog-file-menu')}
               style={{
                 left: Math.min(lineMenu.x, window.innerWidth - 220),
                 top: Math.min(lineMenu.y, window.innerHeight - 100),

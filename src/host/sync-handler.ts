@@ -63,6 +63,29 @@ function safeUrl(url: string): string {
   return url.replace(/\/\/[^@/]+@/, '//')
 }
 
+/** Whether `ancestor` is reachable from `descendant`. */
+async function isAncestor(root: string, ancestor: string, descendant: string, signal: AbortSignal): Promise<boolean> {
+  try {
+    await runGit(root, ['merge-base', '--is-ancestor', ancestor, descendant], signal)
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Whether another worktree has this branch checked out. Moving its ref from here
+ * would leave that worktree pointing at a tree its index no longer matches.
+ */
+async function checkedOutElsewhere(root: string, branch: string, signal: AbortSignal): Promise<boolean> {
+  try {
+    const output = await runGit(root, ['worktree', 'list', '--porcelain'], signal)
+    return output.split(/\r?\n/).some(line => line === `branch refs/heads/${branch}`)
+  } catch {
+    return false
+  }
+}
+
 /**
  * A push/pull that failed on authentication gets the remote, its URL scheme,
  * and the configured credential helper, so the client can offer to store a
@@ -189,10 +212,40 @@ export function createSyncHandler(context: RouteContext): (req: IncomingMessage,
         } catch {
           throw new RouteError(400, 'invalid-branch', 'That branch name is not valid.', { branch })
         }
-        try {
-          await runGit(repo.root, ['pull', remote, branch], controller.signal)
-        } catch (error) {
-          throw await annotateAuthFailure(repo.root, error, remote, controller.signal)
+        const current = (await runGit(repo.root, ['branch', '--show-current'], controller.signal)).trim()
+        if (current === branch) {
+          try {
+            await runGit(repo.root, ['pull', remote, branch], controller.signal)
+          } catch (error) {
+            throw await annotateAuthFailure(repo.root, error, remote, controller.signal)
+          }
+        } else {
+          // `git pull` always merges into the checked-out branch, so pulling a
+          // branch the user did not check out has to fast-forward its ref instead.
+          const localRef = `refs/heads/${branch}`
+          let localTip: string
+          try {
+            localTip = (await runGit(repo.root, ['rev-parse', '--verify', '--quiet', `${localRef}^{commit}`], controller.signal)).trim()
+          } catch {
+            throw new RouteError(404, 'branch-not-found', 'That local branch does not exist.', { branch })
+          }
+          if (await checkedOutElsewhere(repo.root, branch, controller.signal)) {
+            throw new RouteError(409, 'branch-checked-out', 'That branch is checked out in another worktree.', { branch })
+          }
+          try {
+            await runGit(repo.root, ['fetch', remote, branch], controller.signal)
+          } catch (error) {
+            throw await annotateAuthFailure(repo.root, error, remote, controller.signal)
+          }
+          const remoteTip = (await runGit(repo.root, ['rev-parse', '--verify', 'FETCH_HEAD^{commit}'], controller.signal)).trim()
+          if (remoteTip !== localTip) {
+            if (await isAncestor(repo.root, localTip, remoteTip, controller.signal)) {
+              // A plain fast-forward: the branch moves, the worktree is untouched.
+              await runGit(repo.root, ['update-ref', localRef, remoteTip], controller.signal)
+            } else if (!(await isAncestor(repo.root, remoteTip, localTip, controller.signal))) {
+              throw new RouteError(409, 'diverged', 'That branch has diverged from its remote; check it out to merge.', { branch })
+            }
+          }
         }
         await send(res, json({ ok: true, action, remote, branch }))
         return

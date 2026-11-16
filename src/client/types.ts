@@ -274,6 +274,22 @@ export type AiReviewStreamEvent =
     type: 'done'
   } & Omit<PullAiReviewPayload, 'ok'>)
 
+/** One streamed event of a pre-commit review of the staged diff. */
+export type CommitReviewStreamEvent =
+  | { type: 'start'; attempt: number; model: string }
+  | { type: 'reasoning'; text: string }
+  | { type: 'text'; text: string }
+  | { type: 'retry'; attempt: number }
+  | { type: 'done'; review: string; model: string; truncated: boolean }
+
+/** Result of a pre-commit review request. */
+export interface CommitReviewPayload {
+  ok: true
+  review: string
+  model: string
+  truncated: boolean
+}
+
 export interface PullsPayload {
   ok: true
   remote: string
@@ -444,12 +460,29 @@ export interface WorkspaceStatusPayload {
   workspace: WorkspaceStatus
 }
 
+export interface WorkspaceDiffMediaSide {
+  /** `data:` URL for this side, or null when it cannot be shown. */
+  dataUrl: string | null
+  /** Why the side has no media: the blob is missing, or too large to embed. */
+  reason: 'absent' | 'large' | null
+}
+
+export interface WorkspaceDiffMedia {
+  /** Which player the client renders. */
+  kind: 'image' | 'audio'
+  mime: string
+  before: WorkspaceDiffMediaSide
+  after: WorkspaceDiffMediaSide
+}
+
 export interface WorkspaceDiff {
   path: string
   scope: WorkspaceScope
   patch: string
   binary: boolean
   truncated: boolean
+  /** Present for images and audio; `patch` is empty then. */
+  media?: WorkspaceDiffMedia
 }
 
 export interface WorkspaceDiffPayload {

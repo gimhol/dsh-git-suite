@@ -7,14 +7,18 @@ import { useDiffMode } from '../lib/use-diff-mode.js'
 import { useSplitSize } from '../lib/use-split-size.js'
 import { fileManagerName } from '../lib/platform.js'
 import { readRepoUiState, writeRepoUiState } from '../lib/ui-state.js'
-import { ConflictIcon, MinusIcon, PlusIcon, RefreshIcon, SparkleIcon, SplitDiffIcon, UnifiedDiffIcon } from './GitLogIcon.js'
+import { ConflictIcon, ExpandIcon, MinusIcon, PlusIcon, RefreshIcon, ReviewIcon, SparkleIcon, SplitDiffIcon, UnifiedDiffIcon } from './GitLogIcon.js'
 import { Button } from './Button.js'
 import { Splitter } from './Splitter.js'
 import { Spinner, useMinimumSpin } from './States.js'
 import { toast } from './Toast.js'
 import { hideTooltip, showTooltip, tooltipProps } from './Tooltip.js'
 import { DiffView } from './DiffView.js'
+import { MediaDiff } from './MediaDiff.js'
 import { FileActionDialog } from './FileActionDialog.js'
+import { CommitReviewDialog } from './CommitReviewDialog.js'
+import { DiffDialog } from './DiffDialog.js'
+import { DeleteFilesDialog } from './DeleteFilesDialog.js'
 import { IgnoreFileDialog } from './IgnoreFileDialog.js'
 import { StashCreateDialog } from './StashCreateDialog.js'
 import type { ConflictFile, OperationPayload, Translate, WorkspaceFile, WorkspaceScope } from '../types.js'
@@ -47,7 +51,7 @@ function statusTone(status: string): string {
 }
 
 /** Working-tree panel: staged/unstaged files, per-file diff, and the commit form. */
-export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperationChanged }: {
+export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperationChanged, sessionId }: {
   view: GitLogView
   ws: WorkspaceView
   t: Translate
@@ -56,6 +60,8 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
   /** Conflicts of an in-progress merge/rebase, when one is stopped. */
   operation?: OperationPayload | null
   onOperationChanged?(): void
+  /** Chat session whose composer can receive an AI review; absent when no session is bound. */
+  sessionId?: string
 }): React.ReactElement {
   const path = view.repo?.repoRoot ?? view.pathInput.trim()
   const repoKey = view.repo?.repoRoot ?? ''
@@ -65,14 +71,54 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
   const [lineBusy, setLineBusy] = useState(false)
   const lineMenuRef = useRef<HTMLDivElement | null>(null)
   const [fileAction, setFileAction] = useState<{ kind: 'discard' | 'delete'; file: string } | null>(null)
+  /** Untracked paths queued for the bulk delete confirmation. */
+  const [deleteFiles, setDeleteFiles] = useState<string[] | null>(null)
   const [ignoreFile, setIgnoreFile] = useState<string | null>(null)
+  /** The AI review dialog reviews the staged diff. */
+  const [reviewOpen, setReviewOpen] = useState(false)
+  /** The patch shown in its own modal window. */
+  const [diffDialogOpen, setDiffDialogOpen] = useState(false)
   const [stashOpen, setStashOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement | null>(null)
   const status = ws.status
   const staged = status?.staged ?? []
   const unstaged = status?.unstaged ?? []
+  /** Checked untracked files; only these can be deleted in bulk. */
+  const checkedUntracked = unstaged
+    .filter(file => file.untracked === true && checked.unstaged.includes(file.path))
+    .map(file => file.path)
+  /** Where a Shift range starts; the last row toggled by click or checkbox. */
+  const lastCheck = useRef<{ group: 'staged' | 'unstaged'; path: string } | null>(null)
 
-  const toggleCheck = (group: 'staged' | 'unstaged', file: string): void => {
+  /**
+   * Toggle one row; with Shift, extend the selection from the last row in the
+   * same group, so a run of files can be checked without clicking each one.
+   */
+  const toggleCheck = (group: 'staged' | 'unstaged', file: string, extend = false): void => {
+    const files = group === 'staged' ? staged : unstaged
+    const anchor = lastCheck.current
+    if (extend && anchor !== null && anchor.group === group) {
+      const from = files.findIndex(item => item.path === anchor.path)
+      const to = files.findIndex(item => item.path === file)
+      if (from >= 0 && to >= 0) {
+        const [start, end] = from <= to ? [from, to] : [to, from]
+        const range = files.slice(start, end + 1).map(item => item.path)
+        setChecked(current => {
+          const list = current[group]
+          // A range that is already fully checked is cleared instead.
+          const filled = range.every(item => list.includes(item))
+          return {
+            ...current,
+            [group]: filled
+              ? list.filter(item => !range.includes(item))
+              : Array.from(new Set([...list, ...range])),
+          }
+        })
+        lastCheck.current = { group, path: file }
+        return
+      }
+    }
+    lastCheck.current = { group, path: file }
     setChecked(current => {
       const list = current[group]
       const next = list.includes(file) ? list.filter(item => item !== file) : [...list, file]
@@ -301,7 +347,14 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
         key={`${scope}:${file.path}`}
         className={cls(`dsh-gitlog-workspace-file${selected ? ' is-selected' : ''}`)}
         {...tooltipProps(() => rowHint(file))}
-        onClick={() => ws.selectFile(file.path, scope)}
+        onClick={event => {
+          // Shift-click extends the checkbox range instead of opening the diff.
+          if (event.shiftKey) {
+            toggleCheck(group, file.path, true)
+            return
+          }
+          ws.selectFile(file.path, scope)
+        }}
         onDoubleClick={() => toggleStage(file, scope)}
         onContextMenu={event => {
           event.preventDefault()
@@ -313,7 +366,7 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
           checked={isChecked}
           onClick={event => event.stopPropagation()}
           onDoubleClick={event => event.stopPropagation()}
-          onChange={() => toggleCheck(group, file.path)}
+          onChange={event => toggleCheck(group, file.path, (event.nativeEvent as MouseEvent).shiftKey === true)}
           aria-label={file.path}
         />
         <span className={cls(`dsh-gitlog-workspace-status ${statusTone(file.status)}${conflicted ? ' is-conflict' : ''}`)}>
@@ -560,6 +613,14 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
       <div className={cls('dsh-gitlog-workspace-commit-actions')}>
         <Button
           iconOnly
+          variant="ghost"
+          title={t('commitReview')}
+          onClick={() => setReviewOpen(true)}
+          disabled={staged.length === 0 || ws.actionState === 'loading'}
+          icon={<ReviewIcon />}
+        />
+        <Button
+          iconOnly
           className={cls('dsh-gitlog-generate-btn')}
           title={ws.generateState === 'loading' ? t('generatingMessage') : t('generateMessage')}
           onClick={ws.generate}
@@ -593,15 +654,30 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
         {ws.selected !== null
           ? <code className={cls('dsh-gitlog-patch-file')} {...tooltipProps(ws.selected.path)}>{`${scopeLabel} · ${ws.selected.path}`}</code>
           : null}
-        <button
-          type="button"
-          className={cls('dsh-gitlog-diff-mode')}
-          aria-label={diffMode.mode === 'split' ? t('diffUnified') : t('diffSplit')}
-          {...tooltipProps(diffMode.mode === 'split' ? t('diffUnified') : t('diffSplit'))}
-          onClick={diffMode.toggle}
-        >
-          {diffMode.mode === 'split' ? <UnifiedDiffIcon /> : <SplitDiffIcon />}
-        </button>
+        <span className={cls('dsh-gitlog-diff-actions')}>
+          {ws.diff === null || ws.diff.patch === '' || ws.diff.binary
+            ? null
+            : (
+                <button
+                  type="button"
+                  className={cls('dsh-gitlog-diff-mode')}
+                  aria-label={t('diffDialogOpen')}
+                  {...tooltipProps(t('diffDialogOpen'))}
+                  onClick={() => setDiffDialogOpen(true)}
+                >
+                  <ExpandIcon />
+                </button>
+              )}
+          <button
+            type="button"
+            className={cls('dsh-gitlog-diff-mode')}
+            aria-label={diffMode.mode === 'split' ? t('diffUnified') : t('diffSplit')}
+            {...tooltipProps(diffMode.mode === 'split' ? t('diffUnified') : t('diffSplit'))}
+            onClick={diffMode.toggle}
+          >
+            {diffMode.mode === 'split' ? <UnifiedDiffIcon /> : <SplitDiffIcon />}
+          </button>
+        </span>
       </div>
       {ws.selected === null
         ? <p className={cls('dsh-gitlog-workspace-empty')}>{t('selectFileToViewDiff')}</p>
@@ -610,7 +686,13 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
           : ws.diffState === 'error'
             ? <p className={cls('dsh-gitlog-note')} role="alert">{ws.diffError?.message ?? t('unknownError')}</p>
             : ws.diff !== null
-              ? ws.diff.binary
+              ? ws.diff.media !== undefined
+                ? (
+                    <div className={cls('dsh-gitlog-workspace-diff-body')}>
+                      <MediaDiff media={ws.diff.media} path={ws.selected?.path ?? ''} t={t} />
+                    </div>
+                  )
+                : ws.diff.binary
                 ? <p className={cls('dsh-gitlog-workspace-empty')}>{t('binary')}</p>
                 : (
                     <div className={cls('dsh-gitlog-workspace-diff-body')}>
@@ -819,6 +901,21 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
                       {fileMenu.file.untracked ? t('deleteFileMenu') : t('discardMenu')}
                     </button>
                   )}
+              {checkedUntracked.length === 0
+                ? null
+                : (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="danger"
+                      onClick={() => {
+                        setDeleteFiles(checkedUntracked)
+                        setFileMenu(null)
+                      }}
+                    >
+                      {t('deleteSelectedCount').replace('{count}', String(checkedUntracked.length))}
+                    </button>
+                  )}
               {fileMenu.file.staged || !fileMenu.file.untracked
                 ? null
                 : (
@@ -870,6 +967,46 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
               t={t}
               onDone={() => ws.refresh()}
               onClose={() => setFileAction(null)}
+            />
+          )}
+      {reviewOpen
+        ? (
+            <CommitReviewDialog
+              view={view}
+              t={t}
+              sessionId={sessionId}
+              onClose={() => setReviewOpen(false)}
+            />
+          )
+        : null}
+      {diffDialogOpen && ws.diff !== null && ws.diff.patch !== ''
+        ? (
+            <DiffDialog
+              path={ws.selected?.path ?? ''}
+              patch={ws.diff.patch}
+              t={t}
+              mode={diffMode.mode}
+              onToggleMode={diffMode.toggle}
+              onClose={() => setDiffDialogOpen(false)}
+            />
+          )
+        : null}
+      {deleteFiles === null
+        ? null
+        : (
+            <DeleteFilesDialog
+              view={view}
+              files={deleteFiles}
+              t={t}
+              onDone={() => {
+                const removed = new Set(deleteFiles)
+                setChecked(current => ({
+                  ...current,
+                  unstaged: current.unstaged.filter(path => !removed.has(path)),
+                }))
+                ws.refresh()
+              }}
+              onClose={() => setDeleteFiles(null)}
             />
           )}
       {ignoreFile === null

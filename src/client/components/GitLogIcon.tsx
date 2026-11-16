@@ -294,6 +294,51 @@ function CircleArrow({ direction, dashed = false }: { direction: 'down' | 'up'; 
   )
 }
 
+/** Two arrows pointing out of a frame: open the diff in its own dialog. */
+export function ExpandIcon({ size = 16 }: { size?: number }): React.ReactElement {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden={true}
+      focusable={false}
+    >
+      <path d="M14 4h6v6" />
+      <path d="M20 4l-6 6" />
+      <path d="M10 20H4v-6" />
+      <path d="M4 20l6-6" />
+    </svg>
+  )
+}
+
+/** Clipboard with a check: the AI review action. */
+export function ReviewIcon({ size = 16 }: { size?: number }): React.ReactElement {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden={true}
+      focusable={false}
+    >
+      <path d="M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1z" />
+      <path d="M8 6H6a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-2" />
+      <path d="M8.5 13.5l2.2 2.2 4.3-4.3" />
+    </svg>
+  )
+}
+
 export function CommitIcon(): React.ReactElement {
   return (
     <svg

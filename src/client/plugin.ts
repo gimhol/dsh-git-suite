@@ -5,6 +5,7 @@ import { GitTabTitle } from './GitTabTitle.js'
 import { en } from './locales/en.js'
 import { zh } from './locales/zh.js'
 import { bindShortcuts } from './shortcutBridge.js'
+import { bindSessionInsert } from './sessionBridge.js'
 import { SidebarGitLogPanel } from './SidebarPanel.js'
 
 
@@ -34,6 +35,7 @@ export function createPlugin(): ClientPlugin {
     inject: ['slots', 'locale'],
     apply(ctx: ClientContext): void {
       ctx.effect(() => ctx.locale.register(NS, { en, zh }), 'git-suite: dictionaries')
+      bindSessionInsert(ctx)
       const t = ctx.locale.bind(NS)
 
       ctx.effect(

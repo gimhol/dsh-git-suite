@@ -49,6 +49,35 @@ export function runGit(cwd: string, args: readonly string[], signal?: AbortSigna
   })
 }
 
+/** Run one git command in `cwd` and resolve with its raw stdout, for binary blobs. */
+export function runGitBuffer(cwd: string, args: readonly string[], signal?: AbortSignal, timeoutMs = GIT_TIMEOUT_MS): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    execFile(
+      'git',
+      ['--no-pager', '-c', 'core.quotepath=false', '-C', cwd, ...args],
+      {
+        cwd,
+        env: gitEnvironment(),
+        encoding: 'buffer',
+        windowsHide: true,
+        timeout: timeoutMs,
+        maxBuffer: GIT_MAX_BUFFER,
+        signal,
+      },
+      (error, stdout, stderr) => {
+        if (error === null) {
+          resolve(stdout)
+          return
+        }
+        const failure = error as GitExecError
+        failure.stdout = stdout
+        failure.stderr = stderr
+        reject(failure)
+      },
+    )
+  })
+}
+
 /** Map a raw git failure onto the route's user-facing error vocabulary. */
 export function gitFailure(error: unknown): RouteError {
   const failed = (error ?? {}) as GitExecError

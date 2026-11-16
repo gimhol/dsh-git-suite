@@ -783,6 +783,35 @@ $brand: var(--dsw-alias-brand-primary);
     line-height: 1.5;
   }
 
+  // Paths listed in the bulk untracked-file delete confirmation.
+  &-delete-list {
+    max-height: 180px;
+    margin: 0;
+    padding: 8px 12px;
+    overflow: auto;
+    border: 1px solid $border-l1;
+    border-radius: 8px;
+    background: $bg-base;
+    color: $label-secondary;
+    font-family: var(--gitlog-mono);
+    font-size: $font-tiny;
+    list-style: none;
+  }
+
+  // Streaming AI review of the staged diff, shown inside a dialog.
+  &-commit-review {
+    max-height: min(60vh, 520px);
+    margin: 0;
+    padding: 10px 12px;
+    overflow: auto;
+    border: 1px solid $border-l1;
+    border-radius: 8px;
+    background: $bg-layer-1;
+    color: $label-primary;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+  }
+
   &-settings.dsh-gitlog-repo-dialog {
     width: min(600px, 100%);
   }
@@ -790,6 +819,36 @@ $brand: var(--dsw-alias-brand-primary);
   // Branch tables and long URLs get a roomier box on wide enough windows.
   &-settings.dsh-gitlog-repo-dialog.dsh-gitlog-dialog-wide {
     width: min(780px, 100%);
+  }
+
+  // The patch in its own modal: a much wider frame than the settings dialog.
+  &-settings.dsh-gitlog-diff-dialog {
+    width: min(1100px, 96vw);
+  }
+
+  &-diff-dialog-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  &-diff-dialog-body {
+    display: flex;
+    flex-direction: column;
+    height: min(72vh, 780px);
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid $border-l1;
+    border-radius: 8px;
+    background: $bg-base;
+  }
+
+  &-diff-dialog-body .dsh-gitlog-diff {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
   }
 
   &-body {
@@ -1824,6 +1883,8 @@ $brand: var(--dsw-alias-brand-primary);
     .dsh-gitlog-diff-num {
       width: 40px;
       flex: 0 0 40px;
+      // Same inset divider as the unified gutter, between number and code.
+      box-shadow: inset -1px 0 0 $border-l1;
     }
 
     .dsh-gitlog-diff-code {
@@ -1856,6 +1917,20 @@ $brand: var(--dsw-alias-brand-primary);
 
   &-diff-split-row.is-selected {
     cursor: pointer;
+  }
+
+  // Right-aligned cluster of diff controls: the mode toggle keeps the right
+  // edge it always had, and the widen button sits immediately to its left.
+  &-diff-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+
+    .dsh-gitlog-diff-mode {
+      margin-left: 0;
+    }
   }
 
   &-diff-mode {
@@ -1896,6 +1971,13 @@ $brand: var(--dsw-alias-brand-primary);
     background: $bg-base;
     user-select: none;
     cursor: default;
+    // Dividers between old | new and between the numbers and the code. Inset
+    // shadows keep them out of the column widths.
+    box-shadow: inset -1px 0 0 $border-l1;
+
+    > .dsh-gitlog-diff-num:first-child {
+      box-shadow: inset -1px 0 0 $border-l1;
+    }
 
     &:hover .dsh-gitlog-diff-num {
       color: $label-primary;
@@ -2866,6 +2948,167 @@ $brand: var(--dsw-alias-brand-primary);
     border: 0;
     border-radius: 0;
     overflow: auto;
+  }
+
+  // Before/after panes for an image change; the grid wraps to one column when
+  // the pane is narrow, so the two versions stay readable.
+  &-media-diff {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 10px;
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 10px;
+    overflow: auto;
+  }
+
+  &-media-diff-side {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 160px;
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid $border-l1;
+    border-radius: 8px;
+    background: $bg-base;
+  }
+
+  &-media-diff-side figcaption {
+    flex: 0 0 auto;
+    padding: 4px 10px;
+    border-bottom: 1px solid $border-l1;
+    background: $bg-layer-1;
+    color: $label-secondary;
+    font-size: $font-tiny;
+  }
+
+  &-media-diff-img {
+    display: block;
+    flex: 1 1 auto;
+    width: 100%;
+    min-height: 0;
+    object-fit: contain;
+    background: $bg-base;
+  }
+
+  // The image itself is a button: clicking anywhere on it opens the preview.
+  &-media-diff-zoom {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: zoom-in;
+
+    > .dsh-gitlog-media-diff-img {
+      height: 100%;
+    }
+  }
+
+  &-media-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    background: rgba(0, 0, 0, .72);
+    cursor: zoom-out;
+  }
+
+  &-media-lightbox-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+    background: $bg-base;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, .45);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+
+  &-media-lightbox-bar {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    display: flex;
+    gap: 4px;
+    padding: 6px;
+    border: 1px solid $border-l2;
+    border-radius: 999px;
+    background: $bg-layer-1;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .4);
+    transform: translateX(-50%);
+  }
+
+  &-media-lightbox-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: $label-primary;
+    font: inherit;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover {
+      background: $bg-base;
+    }
+  }
+
+  &-media-lightbox-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid $border-l2;
+    border-radius: 8px;
+    background: $bg-layer-1;
+    color: $label-primary;
+    font: inherit;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover {
+      border-color: $brand;
+    }
+  }
+
+  &-media-diff-audio {
+    flex: 0 0 auto;
+    width: 100%;
+    margin: auto;
+    padding: 16px;
+    box-sizing: border-box;
+  }
+
+  &-media-diff-note {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 24px;
+    color: $label-secondary;
+    font-size: $font-meta;
+    text-align: center;
   }
 
   &-workspace-empty {

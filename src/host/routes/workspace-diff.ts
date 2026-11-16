@@ -1,11 +1,89 @@
 import { readFile } from 'node:fs/promises'
 import { resolve, sep } from 'node:path'
 import { RouteError } from '../errors.js'
-import { gitFailure, runGit } from '../git.js'
+import { gitFailure, runGit, runGitBuffer } from '../git.js'
 import { resolveRepository } from '../repository.js'
-import type { RouteContext, WorkspaceDiff } from '../types.js'
+import type { RouteContext, WorkspaceDiff, WorkspaceDiffMedia, WorkspaceDiffMediaSide } from '../types.js'
 
 const MAX_PATCH_CHARS = 400_000
+/** Largest media side embedded in a JSON payload, before base64 expansion. */
+const MAX_MEDIA_BYTES = 3 * 1024 * 1024
+
+/** Formats a browser can render directly; SVG and other text stays a text diff. */
+const MEDIA_TYPES: Readonly<Record<string, { kind: 'image' | 'audio'; mime: string }>> = {
+  png: { kind: 'image', mime: 'image/png' },
+  jpg: { kind: 'image', mime: 'image/jpeg' },
+  jpeg: { kind: 'image', mime: 'image/jpeg' },
+  gif: { kind: 'image', mime: 'image/gif' },
+  webp: { kind: 'image', mime: 'image/webp' },
+  bmp: { kind: 'image', mime: 'image/bmp' },
+  ico: { kind: 'image', mime: 'image/x-icon' },
+  avif: { kind: 'image', mime: 'image/avif' },
+  mp3: { kind: 'audio', mime: 'audio/mpeg' },
+  wav: { kind: 'audio', mime: 'audio/wav' },
+  ogg: { kind: 'audio', mime: 'audio/ogg' },
+  oga: { kind: 'audio', mime: 'audio/ogg' },
+  opus: { kind: 'audio', mime: 'audio/ogg' },
+  flac: { kind: 'audio', mime: 'audio/flac' },
+  m4a: { kind: 'audio', mime: 'audio/mp4' },
+  aac: { kind: 'audio', mime: 'audio/aac' },
+  weba: { kind: 'audio', mime: 'audio/webm' },
+}
+
+/** @returns the media kind and MIME type when the path names one, else null. */
+function mediaType(file: string): { kind: 'image' | 'audio'; mime: string } | null {
+  const dot = file.lastIndexOf('.')
+  if (dot < 0) return null
+  return MEDIA_TYPES[file.slice(dot + 1).toLowerCase()] ?? null
+}
+
+/**
+ * Read one side of a media diff.
+ * @param mime - MIME type of the path.
+ * @param read - loads the blob; a rejection means the side does not exist.
+ * @returns a data URL, or the reason the side cannot be shown.
+ */
+async function mediaSide(mime: string, read: () => Promise<Buffer>): Promise<WorkspaceDiffMediaSide> {
+  let bytes: Buffer
+  try {
+    bytes = await read()
+  } catch {
+    return { dataUrl: null, reason: 'absent' }
+  }
+  if (bytes.byteLength > MAX_MEDIA_BYTES) return { dataUrl: null, reason: 'large' }
+  return { dataUrl: `data:${mime};base64,${bytes.toString('base64')}`, reason: null }
+}
+
+/**
+ * Describe both sides of an image or audio change: unstaged compares the index
+ * with the working tree, staged compares `HEAD` with the index, untracked has no
+ * old side.
+ */
+async function readMediaDiff(
+  root: string,
+  absolute: string,
+  file: string,
+  scope: 'staged' | 'unstaged' | 'untracked',
+  kind: 'image' | 'audio',
+  mime: string,
+  signal: AbortSignal,
+): Promise<WorkspaceDiffMedia> {
+  const fromGit = (spec: string) => mediaSide(mime, () => runGitBuffer(root, ['show', spec], signal))
+  const fromDisk = () => mediaSide(mime, () => readFile(absolute))
+  let before: WorkspaceDiffMediaSide
+  let after: WorkspaceDiffMediaSide
+  if (scope === 'untracked') {
+    before = { dataUrl: null, reason: 'absent' }
+    after = await fromDisk()
+  } else if (scope === 'unstaged') {
+    before = await fromGit(`:${file}`)
+    after = await fromDisk()
+  } else {
+    before = await fromGit(`HEAD:${file}`)
+    after = await fromGit(`:${file}`)
+  }
+  return { kind, mime, before, after }
+}
 
 /** Build the `/dev/null -> file` diff Git would show for an untracked file. */
 function untrackedPatch(path: string, text: string): string {
@@ -36,6 +114,16 @@ export async function readWorkspaceDiff(
   }
 
   try {
+    // Images and audio have no text to diff; hand the client both sides instead.
+    const media = mediaType(file)
+    if (media !== null) {
+      const payload = await readMediaDiff(repo.root, absolute, file, scope, media.kind, media.mime, signal)
+      return {
+        ok: true,
+        diff: { path: file, scope, patch: '', binary: true, truncated: false, media: payload },
+      }
+    }
+
     if (scope === 'untracked') {
       const content = await readFile(absolute)
       if (content.includes(0)) {

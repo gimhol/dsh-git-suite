@@ -52,12 +52,31 @@ export interface WorkspaceStatus {
   unstaged: WorkspaceFile[]
 }
 
+export interface WorkspaceDiffMediaSide {
+  /** `data:` URL for this side, or null when it cannot be shown. */
+  dataUrl: string | null
+  /** Why the side has no media: the blob is missing, or too large to embed. */
+  reason: 'absent' | 'large' | null
+}
+
+export interface WorkspaceDiffMedia {
+  /** Which player the client renders. */
+  kind: 'image' | 'audio'
+  mime: string
+  /** The version before the change (index for unstaged, HEAD for staged). */
+  before: WorkspaceDiffMediaSide
+  /** The version after the change (working tree, or index when staged). */
+  after: WorkspaceDiffMediaSide
+}
+
 export interface WorkspaceDiff {
   path: string
   scope: 'staged' | 'unstaged' | 'untracked'
   patch: string
   binary: boolean
   truncated: boolean
+  /** Present for images and audio; `patch` is empty then. */
+  media?: WorkspaceDiffMedia
 }
 
 export interface WorkspaceCommit {

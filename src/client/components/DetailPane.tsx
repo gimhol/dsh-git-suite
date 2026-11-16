@@ -10,7 +10,8 @@ import { tooltipProps } from './Tooltip.js'
 import { Refs } from './Refs.js'
 import { DiffView } from './DiffView.js'
 import { Spinner } from './States.js'
-import { SplitDiffIcon, UnifiedDiffIcon } from './GitLogIcon.js'
+import { ExpandIcon, SplitDiffIcon, UnifiedDiffIcon } from './GitLogIcon.js'
+import { DiffDialog } from './DiffDialog.js'
 import { Splitter } from './Splitter.js'
 import { cls } from '../styles.js'
 
@@ -34,6 +35,8 @@ function clamp(value: number, min: number, max: number): number {
  */
 export function DetailPane({ detail, status, error, t }: DetailPaneProps): React.ReactElement {
   const [fileChoice, setFileChoice] = useState<{ hash: string | null; index: number }>({ hash: null, index: 0 })
+  /** The selected file's patch shown in its own modal window. */
+  const [diffDialogOpen, setDiffDialogOpen] = useState(false)
   const diffMode = useDiffMode()
   const sections = useMemo(() => splitPatch(detail?.patch ?? ''), [detail?.patch])
   const innerRef = useRef<HTMLDivElement | null>(null)
@@ -179,15 +182,30 @@ export function DetailPane({ detail, status, error, t }: DetailPaneProps): React
           {activeFile !== undefined
             ? <code className={cls('dsh-gitlog-patch-file')} {...tooltipProps(activeFile.path)}>{activeFile.path}</code>
             : null}
-          <button
-            type="button"
-            className={cls('dsh-gitlog-diff-mode')}
-            aria-label={diffMode.mode === 'split' ? t('diffUnified') : t('diffSplit')}
-            {...tooltipProps(diffMode.mode === 'split' ? t('diffUnified') : t('diffSplit'))}
-            onClick={diffMode.toggle}
-          >
-            {diffMode.mode === 'split' ? <UnifiedDiffIcon /> : <SplitDiffIcon />}
-          </button>
+          <span className={cls('dsh-gitlog-diff-actions')}>
+            {activeSection === undefined
+              ? null
+              : (
+                  <button
+                    type="button"
+                    className={cls('dsh-gitlog-diff-mode')}
+                    aria-label={t('diffDialogOpen')}
+                    {...tooltipProps(t('diffDialogOpen'))}
+                    onClick={() => setDiffDialogOpen(true)}
+                  >
+                    <ExpandIcon />
+                  </button>
+                )}
+            <button
+              type="button"
+              className={cls('dsh-gitlog-diff-mode')}
+              aria-label={diffMode.mode === 'split' ? t('diffUnified') : t('diffSplit')}
+              {...tooltipProps(diffMode.mode === 'split' ? t('diffUnified') : t('diffSplit'))}
+              onClick={diffMode.toggle}
+            >
+              {diffMode.mode === 'split' ? <UnifiedDiffIcon /> : <SplitDiffIcon />}
+            </button>
+          </span>
         </div>
         {detail.files.length === 0
           ? <p className={cls('dsh-gitlog-note')}>{t('noPatch')}</p>
@@ -207,6 +225,18 @@ export function DetailPane({ detail, status, error, t }: DetailPaneProps): React
           ? <p className={cls('dsh-gitlog-note')}>{t('patchTruncated')}</p>
           : null}
       </div>
+      {diffDialogOpen && activeSection !== undefined
+        ? (
+            <DiffDialog
+              path={detail.files[selectedFile]?.path ?? ''}
+              patch={activeSection}
+              t={t}
+              mode={diffMode.mode}
+              onToggleMode={diffMode.toggle}
+              onClose={() => setDiffDialogOpen(false)}
+            />
+          )
+        : null}
     </div>
   )
 }

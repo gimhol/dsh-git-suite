@@ -11,6 +11,7 @@ import { createGiteeDecisionHandler } from './pr-gitee-decision-handler.js'
 import { createPullDeleteHandler } from './pr-delete-handler.js'
 import { createCommitAiReviewHandler } from './commit-ai-review-handler.js'
 import { createPullAiReviewHandler } from './pr-ai-review-handler.js'
+import { createForgetReviewHandler } from './pr-review-forget-handler.js'
 import { createPullDraftHandler } from './pr-generate-handler.js'
 import { createRemoteHandler } from './remote-handler.js'
 import { createRevealHandler } from './reveal-handler.js'
@@ -48,6 +49,7 @@ const PR_MERGE_PATH = '/git-suite/pr-merge'
 const PR_AI_REVIEW_PATH = '/git-suite/pr-ai-review'
 const COMMIT_REVIEW_PATH = '/git-suite/commit-ai-review'
 const PR_GENERATE_PATH = '/git-suite/pr-generate'
+const PR_REVIEW_FORGET_PATH = '/git-suite/pr-review-forget'
 const PR_GITEE_DECISION_PATH = '/git-suite/pr-gitee-decision'
 const PR_DELETE_PATH = '/git-suite/pr-delete'
 
@@ -222,6 +224,11 @@ export function apply(ctx: HostContext): void {
     path: PR_GENERATE_PATH,
     handler: createPullDraftHandler(context, ctx.llm, ctx.agentDefaultModel),
   }), 'git-suite: AI pull request draft route')
+  ctx.effect(() => ctx.webServer.register({
+    kind: 'exact',
+    path: PR_REVIEW_FORGET_PATH,
+    handler: createForgetReviewHandler(context),
+  }), 'git-suite: forget cached review route')
   ctx.effect(() => ctx.webServer.register({
     kind: 'exact',
     path: PR_GITEE_DECISION_PATH,

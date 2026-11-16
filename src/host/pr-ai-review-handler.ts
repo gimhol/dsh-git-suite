@@ -9,6 +9,7 @@ import { admitHeaders, failure, json } from './http.js'
 import { resolveRepository } from './repository.js'
 import type { PullDetail, PullFile, RouteContext } from './types.js'
 import { readReviewContext, type ReviewContext, type ReviewContextMode } from './pr-review-context.js'
+import { writeReviewCache } from './pr-review-cache.js'
 
 const MAX_BODY_BYTES = 64 * 1024
 const MAX_PATCH_CHARS = 120_000
@@ -365,6 +366,8 @@ export function createPullAiReviewHandler(
         }
         throw new RouteError(502, 'empty-review', 'The model returned an empty review.')
       }
+      // Keep the finished review so reopening this PR shows it immediately.
+      await writeReviewCache(repo.root, remote.name, rawNumber, pull.updatedAt, review)
       if (streaming) {
         emit({
           type: 'done',

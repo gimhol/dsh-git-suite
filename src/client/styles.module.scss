@@ -854,6 +854,18 @@ $brand: var(--dsw-alias-brand-primary);
     width: min(1100px, 96vw);
   }
 
+  // Review text in its own modal: a medium-wide frame with a scrolling body.
+  &-settings.dsh-gitlog-review-dialog {
+    width: min(920px, 94vw);
+  }
+
+  &-review-dialog-body {
+    max-height: min(70vh, 760px);
+    overflow: auto;
+    padding: 2px;
+    overflow-wrap: anywhere;
+  }
+
   &-diff-dialog-toolbar {
     display: flex;
     justify-content: flex-end;

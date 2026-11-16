@@ -16,6 +16,7 @@ import { Dropdown } from './Dropdown.js'
 import { ForgeAuthDialog } from './ForgeAuthDialog.js'
 import { MergePullDialog } from './MergePullDialog.js'
 import { Markdown } from './Markdown.js'
+import { ReviewDialog } from './ReviewDialog.js'
 import { PullChecksBadge } from './PullChecksBadge.js'
 import { PullApprovalBadges } from './PullApprovalBadges.js'
 import { PullReviewBadge } from './PullReviewBadge.js'
@@ -147,6 +148,7 @@ function PullDetail({ view, t, sessionId }: { view: PullsView; t: Translate; ses
   const [aiDialogOpen, setAiDialogOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [openSections, setOpenSections] = useState<Record<PullSectionKey, boolean>>(OPEN_SECTIONS)
+  const [reviewOpen, setReviewOpen] = useState(false)
   const diffMode = useDiffMode()
   const pull = view.detail
   const locale = t('localeId')
@@ -178,6 +180,7 @@ function PullDetail({ view, t, sessionId }: { view: PullsView; t: Translate; ses
     setStateDialog(null)
     setMergeOpen(false)
     setAiDialogOpen(false)
+    setReviewOpen(false)
     setDeleteOpen(false)
     setOpenSections(OPEN_SECTIONS)
   }, [pull?.number, pull?.webUrl])
@@ -322,6 +325,13 @@ function PullDetail({ view, t, sessionId }: { view: PullsView; t: Translate; ses
                           onClick={insertReview}
                         >
                           {t('commitReviewInsert')}
+                        </Button>
+                      )
+                    : null}
+                  {view.aiReviewStatus === 'loading' || view.aiReviewStatus === 'ready'
+                    ? (
+                        <Button variant="ghost" onClick={() => setReviewOpen(true)}>
+                          {t('reviewDialogOpen')}
                         </Button>
                       )
                     : null}
@@ -499,6 +509,23 @@ function PullDetail({ view, t, sessionId }: { view: PullsView; t: Translate; ses
 
       {aiDialogOpen
         ? <AiReviewDialog view={view} t={t} onClose={() => setAiDialogOpen(false)} />
+        : null}
+
+      {reviewOpen
+        ? (
+            <ReviewDialog
+              title={`${t('pullAiReviewTitle')} · #${pull.number}`}
+              text={view.aiReview}
+              t={t}
+              loading={view.aiReviewStatus === 'loading'}
+              canCopy={view.aiReviewStatus === 'ready' && view.aiReview !== ''}
+              canInsert={view.aiReviewStatus === 'ready' && view.aiReview !== '' && sessionId !== undefined}
+              insertTitle={sessionId === undefined ? t('commitReviewNoSession') : undefined}
+              onCopy={() => { void copyReview() }}
+              onInsert={insertReview}
+              onClose={() => setReviewOpen(false)}
+            />
+          )
         : null}
 
       {deleteOpen

@@ -3,6 +3,7 @@ import { detectForge, toForgeInfo, type ForgeTarget } from '../forge/detect.js'
 import { getPull, listPulls, PULL_PAGE_SIZE } from '../forge/index.js'
 import { resolveRemote, readDefaultBase } from '../forge/remote.js'
 import { resolveForgeToken } from '../forge/token.js'
+import { readReviewCache } from '../pr-review-cache.js'
 import { resolveRepository } from '../repository.js'
 import type { ForgeInfo, PullDetail, PullSummary, RouteContext } from '../types.js'
 
@@ -25,6 +26,8 @@ export interface PullPayload {
   state: 'open' | 'closed' | 'merged' | 'all'
   forge: ForgeInfo
   pull: PullDetail
+  /** Cached AI review matching this PR version, when one exists. */
+  cachedReview: string | null
 }
 
 interface ResolvedForge {
@@ -102,11 +105,13 @@ export async function readPull(context: RouteContext, url: URL, signal: AbortSig
   } catch (error) {
     throw annotate(error, resolved)
   }
+  const cachedReview = await readReviewCache(resolved.root, resolved.remote, number, pull.updatedAt)
   return {
     ok: true,
     remote: resolved.remote,
     state,
     forge: toForgeInfo(resolved.target),
     pull,
+    cachedReview,
   }
 }

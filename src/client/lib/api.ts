@@ -65,7 +65,7 @@ export class ApiError extends Error {
   }
 }
 
-export type RequestMode = 'projects' | 'tree' | 'branches' | 'log' | 'commit' | 'resolve' | 'tag' | 'tag-status' | 'version' | 'reflog' | 'operation' | 'apps' | 'commit-messages' | 'switch' | 'status' | 'workspace-diff' | 'session-repo' | 'pulls' | 'pull'
+export type RequestMode = 'projects' | 'tree' | 'branches' | 'log' | 'commit' | 'resolve' | 'tag' | 'tag-status' | 'version' | 'reflog' | 'operation' | 'apps' | 'commit-messages' | 'switch' | 'status' | 'workspace-diff' | 'staged-hash' | 'session-repo' | 'pulls' | 'pull'
 
 export interface RequestParams {
   mode: RequestMode
@@ -501,7 +501,7 @@ export async function requestPullAiReviewStream(
  * diff. The host only reads `git diff --cached`; nothing is committed.
  */
 export async function requestCommitReviewStream(
-  body: { path: string; language?: string },
+  body: { path: string; language?: string; fresh?: boolean },
   onEvent: (event: CommitReviewStreamEvent) => void,
   signal?: AbortSignal,
 ): Promise<CommitReviewPayload> {
@@ -557,7 +557,7 @@ export async function requestCommitReviewStream(
     }
     onEvent(event)
     if (event.type !== 'done') return null
-    return { ok: true, review: event.review, model: event.model, truncated: event.truncated }
+    return { ok: true, review: event.review, model: event.model, hash: event.hash ?? '', truncated: event.truncated }
   }
 
   try {
@@ -586,6 +586,34 @@ export async function requestCommitReviewStream(
   }
   if (done === null) throw new ApiError('The review stream ended before completion.', 'empty-review')
   return done
+}
+
+export interface ForgetReviewCall {
+  path: string
+  remote: string
+  number: number
+}
+
+/** POST /git-suite/pr-review-forget: drop the cached AI review of one request. */
+export async function requestForgetPullReview(
+  body: ForgetReviewCall,
+  signal?: AbortSignal,
+): Promise<{ ok: true }> {
+  return postCommitJson<{ ok: true }>('/git-suite/pr-review-forget', body, signal)
+}
+
+export interface StagedHashPayload {
+  ok: true
+  hash: string
+  empty: boolean
+}
+
+/** Read the hash of the current staged diff (staged-hash resource mode). */
+export async function requestStagedHash(
+  body: { path: string },
+  signal?: AbortSignal,
+): Promise<StagedHashPayload> {
+  return requestJson<StagedHashPayload>({ mode: 'staged-hash', path: body.path }, signal)
 }
 
 export interface RevealFileRequest {

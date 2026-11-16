@@ -281,17 +281,19 @@ export type AiReviewStreamEvent =
 
 /** One streamed event of a pre-commit review of the staged diff. */
 export type CommitReviewStreamEvent =
-  | { type: 'start'; attempt: number; model: string }
+  | { type: 'start'; attempt: number; model: string; hash?: string }
   | { type: 'reasoning'; text: string }
   | { type: 'text'; text: string }
   | { type: 'retry'; attempt: number }
-  | { type: 'done'; review: string; model: string; truncated: boolean }
+  | { type: 'done'; review: string; model: string; hash?: string; truncated: boolean }
 
 /** Result of a pre-commit review request. */
 export interface CommitReviewPayload {
   ok: true
   review: string
   model: string
+  /** Hash of the staged diff this review describes. */
+  hash: string
   truncated: boolean
 }
 
@@ -350,9 +352,11 @@ export interface PullCreatePayload {
 export interface PullPayload {
   ok: true
   remote: string
-  state: 'open' | 'closed' | 'all'
+  state: PullListState
   forge: ForgeInfo
   pull: PullDetail
+  /** Cached AI review matching this pull request version, when one exists. */
+  cachedReview: string | null
 }
 
 export interface PullCheckoutPayload {

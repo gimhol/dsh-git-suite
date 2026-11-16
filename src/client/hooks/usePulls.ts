@@ -499,7 +499,10 @@ export function usePulls({ active, repoRoot, remotes, upstream, branch, branches
         return t('pullBranchNotPushed').replace('{branch}', name)
       }
       if (apiError.code === 'detached-head') return t('pullDetached')
-      return apiError.message
+      // The host folds the forge's own reason into the message; keep any
+      // separate detail too so a duplicate request is obvious.
+      const detail = typeof apiError.details?.detail === 'string' ? apiError.details.detail : ''
+      return detail === '' || apiError.message.includes(detail) ? apiError.message : `${apiError.message} ${detail}`
     } finally {
       creatingRef.current = false
     }

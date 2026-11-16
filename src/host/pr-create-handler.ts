@@ -229,8 +229,13 @@ export function createPullCreateHandler(context: RouteContext): (req: IncomingMe
         }, signal)
         await send(res, json({ ok: true, pull, number: pull.number, webUrl: pull.webUrl }))
       } catch (error) {
-        if (error instanceof RouteError) throw error.withDetails({ remote: remote.name })
-        throw error
+        if (!(error instanceof RouteError)) throw error
+        const detail = typeof error.details?.detail === 'string' ? error.details.detail : ''
+        // Surface the forge's own reason (duplicate request, branch rules, …).
+        if (detail !== '' && error.code === 'forge-request-failed') {
+          throw new RouteError(error.status, error.code, `${error.message} ${detail}`, { ...error.details, remote: remote.name })
+        }
+        throw error.withDetails({ remote: remote.name })
       }
     } catch (error) {
       await send(res, failure(error))

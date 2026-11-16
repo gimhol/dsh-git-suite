@@ -792,6 +792,26 @@ $brand: var(--dsw-alias-brand-primary);
   }
 
   // Paths listed in the bulk untracked-file delete confirmation.
+  // Settings gear with an update badge: the wrapper anchors the dot.
+  &-settings-icon {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &-settings-dot {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--dsw-alias-state-error-primary);
+    box-shadow: 0 0 0 2px $bg-layer-1;
+    pointer-events: none;
+  }
+
   &-delete-list {
     max-height: 180px;
     margin: 0;

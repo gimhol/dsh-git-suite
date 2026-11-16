@@ -41,12 +41,37 @@ import { EmptyState, LoadingState } from './components/States.js'
 import { useGitLogView } from './hooks/useGitLogView.js'
 import { usePulls } from './hooks/usePulls.js'
 import { useWorkspace } from './hooks/useWorkspace.js'
-import { requestBranchAction, requestCheckout, requestCommitOp, requestOperation, requestSync, requestTagStatus, toApiError } from './lib/api.js'
+import { requestBranchAction, requestCheckout, requestCommitOp, requestOperation, requestSync, requestTagStatus, requestVersionCheck, toApiError } from './lib/api.js'
 import { hasForge } from './lib/forge.js'
 import { readRepoUiState, setActiveRepo, writeRepoUiState, type ViewMode } from './lib/ui-state.js'
 import { h, useEffect, useRef, useState } from './runtime.js'
 import { cls, CSS } from './styles.js'
-import type { Branch, Commit, OperationPayload, Selection, TagStatusPayload, Translate } from './types.js'
+import type { Branch, Commit, OperationPayload, Selection, TagStatusPayload, Translate, VersionPayload } from './types.js'
+
+const VERSION_CACHE_KEY = 'git-suite-version-check'
+const VERSION_CHECK_INTERVAL = 6 * 60 * 60 * 1000
+
+/** Last npm version check, or null when storage is empty or unreadable. */
+function readVersionCache(): { at: number; version: VersionPayload } | null {
+  try {
+    const raw = window.localStorage.getItem(VERSION_CACHE_KEY)
+    if (raw === null) return null
+    const parsed = JSON.parse(raw) as { at?: unknown; version?: unknown }
+    if (typeof parsed.at !== 'number' || typeof parsed.version !== 'object' || parsed.version === null) return null
+    return { at: parsed.at, version: parsed.version as VersionPayload }
+  } catch {
+    return null
+  }
+}
+
+/** Remember the check so opening the panel again does not hit the registry. */
+function writeVersionCache(version: VersionPayload): void {
+  try {
+    window.localStorage.setItem(VERSION_CACHE_KEY, JSON.stringify({ at: Date.now(), version }))
+  } catch {
+    // Storage may be unavailable; the next mount simply checks again.
+  }
+}
 
 export interface GitLogPanelProps {
   t: Translate
@@ -104,6 +129,8 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
   const repoRoot = view.repo?.repoRoot ?? ''
   const [narrow, setNarrow] = useState(isNarrowViewport)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  /** Latest npm version check; drives the settings badge and dialog summary. */
+  const [version, setVersion] = useState<VersionPayload | null>(null)
   const [viewMode, setViewModeState] = useState<ViewMode>(() => readRepoUiState().viewMode ?? 'history')
   const pulls = usePulls({
     active: viewMode === 'pulls',
@@ -501,6 +528,28 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- liveRefresh ref holds current ws
   }, [])
 
+  // Check npm for a newer release when the panel opens, cached for six hours.
+  useEffect(() => {
+    const cached = readVersionCache()
+    if (cached !== null && Date.now() - cached.at < VERSION_CHECK_INTERVAL) {
+      setVersion(cached.version)
+      return
+    }
+    let cancelled = false
+    void requestVersionCheck()
+      .then(payload => {
+        if (cancelled) return
+        setVersion(payload)
+        writeVersionCache(payload)
+      })
+      .catch(() => {
+        // Offline or a registry hiccup: keep whatever the cache held.
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   // A conflict created anywhere (terminal included) opens the commit page,
   // where the banner and the conflict files are actionable. Only a newly seen
   // conflict set switches; going back to history afterwards is allowed.
@@ -833,11 +882,20 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
               )}
           <Button
             iconOnly
-            title={t('settings')}
+            title={version?.updateAvailable === true
+              ? t('updateAvailable').replace('{version}', version.latest)
+              : t('settings')}
             onClick={() => setSettingsOpen(true)}
             ariaHasPopup="dialog"
             ariaExpanded={settingsOpen}
-            icon={<SettingsIcon />}
+            icon={(
+              <span className={cls('dsh-gitlog-settings-icon')}>
+                <SettingsIcon />
+                {version?.updateAvailable === true
+                  ? <span className={cls('dsh-gitlog-settings-dot')} aria-hidden={true} />
+                  : null}
+              </span>
+            )}
           />
         </div>
       </div>
@@ -874,6 +932,7 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
             <SettingsDialog
               limit={view.limit}
               t={t}
+              version={version}
               onChange={view.setLimit}
               onClose={() => setSettingsOpen(false)}
             />

@@ -33,14 +33,16 @@ export function SettingsIcon(): React.ReactElement {
 export interface SettingsDialogProps {
   limit: number
   t: Translate
+  /** Latest automatic version check, so the dialog opens with the result. */
+  version?: VersionPayload | null
   onChange(limit: number): void
   onClose(): void
 }
 
 /** Modal settings: commit page size and a version/update check. */
-export function SettingsDialog({ limit, t, onChange, onClose }: SettingsDialogProps): React.ReactElement {
+export function SettingsDialog({ limit, t, version, onChange, onClose }: SettingsDialogProps): React.ReactElement {
   const [checking, setChecking] = useState(false)
-  const [result, setResult] = useState<VersionPayload | null>(null)
+  const [result, setResult] = useState<VersionPayload | null>(version ?? null)
   const [checkError, setCheckError] = useState<string | null>(null)
 
   useEffect(() => {

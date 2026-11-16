@@ -796,7 +796,7 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
         : null}
       <div ref={stackRef} className={cls('dsh-gitlog-stack')}>
         {viewMode === 'pulls'
-          ? <PullsPane key={repoRoot} view={pulls} t={t} narrow={compact || narrow} repoKey={repoRoot} />
+          ? <PullsPane key={repoRoot} view={pulls} t={t} narrow={compact || narrow} repoKey={repoRoot} sessionId={sessionId} />
           : viewMode === 'workspace'
             ? (
                 <WorkspacePane

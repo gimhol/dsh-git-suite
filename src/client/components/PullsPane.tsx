@@ -26,6 +26,8 @@ import { Splitter } from './Splitter.js'
 import { Switch } from './Switch.js'
 import { tooltipProps } from './Tooltip.js'
 import { VirtualList } from './VirtualList.js'
+import { toast } from './Toast.js'
+import { sessionInsert } from '../sessionBridge.js'
 import { cls } from '../styles.js'
 
 export interface PullsPaneProps {
@@ -35,6 +37,8 @@ export interface PullsPaneProps {
   narrow: boolean
   /** Repository key used to persist the splitter sizes. */
   repoKey: string
+  /** Chat session that can receive the AI review; absent when none is bound. */
+  sessionId?: string
 }
 
 /** Fixed row height, shared by the CSS and the virtual list. */
@@ -136,7 +140,7 @@ function PullSection({ title, meta, open, onToggle, actions, children }: PullSec
   )
 }
 
-function PullDetail({ view, t }: { view: PullsView; t: Translate }): React.ReactElement {
+function PullDetail({ view, t, sessionId }: { view: PullsView; t: Translate; sessionId?: string }): React.ReactElement {
   const [fileIndex, setFileIndex] = useState(0)
   const [stateDialog, setStateDialog] = useState<PullStateAction | null>(null)
   const [mergeOpen, setMergeOpen] = useState(false)
@@ -146,6 +150,28 @@ function PullDetail({ view, t }: { view: PullsView; t: Translate }): React.React
   const diffMode = useDiffMode()
   const pull = view.detail
   const locale = t('localeId')
+
+  /** Copy the finished AI review to the clipboard. */
+  const copyReview = async (): Promise<void> => {
+    if (view.aiReviewStatus !== 'ready' || view.aiReview === '') return
+    try {
+      await navigator.clipboard.writeText(view.aiReview)
+      toast(t('commitReviewCopied'))
+    } catch {
+      toast(t('commitReviewInsertFailed'))
+    }
+  }
+
+  /** Drop the finished review into the current session as a Markdown attachment. */
+  const insertReview = (): void => {
+    if (view.aiReviewStatus !== 'ready' || view.aiReview === '' || sessionId === undefined) return
+    const bridge = sessionInsert()
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+    const name = `pr-${pull?.number ?? 'review'}-review-${stamp}.md`
+    const ok = bridge !== null
+      && (bridge.attachMarkdown(sessionId, name, view.aiReview) || bridge.setDraft(sessionId, view.aiReview))
+    toast(ok ? t('commitReviewInserted') : t('commitReviewInsertFailed'))
+  }
 
   useEffect(() => {
     setFileIndex(0)
@@ -280,6 +306,25 @@ function PullDetail({ view, t }: { view: PullsView; t: Translate }): React.React
               onToggle={() => toggleSection('ai')}
               actions={(
                 <div className={cls('dsh-gitlog-pull-ai-actions')}>
+                  {view.aiReviewStatus === 'ready'
+                    ? (
+                        <Button variant="ghost" onClick={() => { void copyReview() }}>
+                          {t('commitReviewCopy')}
+                        </Button>
+                      )
+                    : null}
+                  {view.aiReviewStatus === 'ready'
+                    ? (
+                        <Button
+                          variant="ghost"
+                          disabled={sessionId === undefined}
+                          title={sessionId === undefined ? t('commitReviewNoSession') : undefined}
+                          onClick={insertReview}
+                        >
+                          {t('commitReviewInsert')}
+                        </Button>
+                      )
+                    : null}
                   {view.aiReviewStatus === 'ready'
                     ? (
                         <Button variant="ghost" onClick={() => setAiDialogOpen(true)}>
@@ -476,7 +521,7 @@ function PullDetail({ view, t }: { view: PullsView; t: Translate }): React.React
 }
 
 /** The PR view: a remote and state filter, the request list, and the detail. */
-export function PullsPane({ view, t, narrow, repoKey }: PullsPaneProps): React.ReactElement {
+export function PullsPane({ view, t, narrow, repoKey, sessionId }: PullsPaneProps): React.ReactElement {
   const forge = view.remotes.find(item => item.name === view.remote)?.forge ?? null
   const currentPull = view.pulls.find(pull => pull.state === 'open' && (
     pull.sourceBranch === view.headBranch || pull.sourceBranch.endsWith(`:${view.headBranch}`)
@@ -678,7 +723,7 @@ export function PullsPane({ view, t, narrow, repoKey }: PullsPaneProps): React.R
           onReset={listSize.reset}
         />
         <div className={cls('dsh-gitlog-pulls-detail')}>
-          <PullDetail view={view} t={t} />
+          <PullDetail view={view} t={t} sessionId={sessionId} />
         </div>
       </div>
 

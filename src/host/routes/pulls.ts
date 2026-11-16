@@ -9,7 +9,7 @@ import type { ForgeInfo, PullDetail, PullSummary, RouteContext } from '../types.
 export interface PullsPayload {
   ok: true
   remote: string
-  state: 'open' | 'closed' | 'all'
+  state: 'open' | 'closed' | 'merged' | 'all'
   forge: ForgeInfo
   page: number
   pulls: PullSummary[]
@@ -22,7 +22,7 @@ export interface PullsPayload {
 export interface PullPayload {
   ok: true
   remote: string
-  state: 'open' | 'closed' | 'all'
+  state: 'open' | 'closed' | 'merged' | 'all'
   forge: ForgeInfo
   pull: PullDetail
 }
@@ -51,9 +51,9 @@ function annotate(error: unknown, resolved: ResolvedForge): unknown {
   return error
 }
 
-function stateFilter(url: URL): 'open' | 'closed' | 'all' {
+function stateFilter(url: URL): 'open' | 'closed' | 'merged' | 'all' {
   const value = url.searchParams.get('state')
-  return value === 'closed' || value === 'all' ? value : 'open'
+  return value === 'closed' || value === 'merged' || value === 'all' ? value : 'open'
 }
 
 /** Read one page of open, closed, or all pull requests for this repository. */
@@ -71,6 +71,8 @@ export async function readPulls(context: RouteContext, url: URL, signal: AbortSi
   } catch (error) {
     throw annotate(error, resolved)
   }
+  const hasMore = pulls.length >= PULL_PAGE_SIZE
+  if (state === 'merged') pulls = pulls.filter(pull => pull.state === 'merged')
   return {
     ok: true,
     remote: resolved.remote,
@@ -79,7 +81,7 @@ export async function readPulls(context: RouteContext, url: URL, signal: AbortSi
     page,
     pulls,
     defaultBase,
-    hasMore: pulls.length >= PULL_PAGE_SIZE,
+    hasMore,
   }
 }
 

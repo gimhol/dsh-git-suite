@@ -3,7 +3,7 @@ import { toast } from '../components/Toast.js'
 import { useCallback, useEffect, useRef, useState } from '../runtime.js'
 import { isAbortError, requestCredential, requestPull, requestPullAiReviewStream, requestPullCheckout, requestPullClose, requestPullCreate, requestPullDelete, requestPullGiteeDecision, requestPullMerge, requestPullReopen, requestPulls, toApiError, type ApiError } from '../lib/api.js'
 import { defaultForgeRemote, forgeOf, supportedRemotes } from '../lib/forge.js'
-import type { AiReviewMode, DetailStatus, LoadStatus, PullCreateBranch, PullCreateRequest, PullDetail, PullMergeRequest, PullSummary, RemoteGroup, Translate } from '../types.js'
+import type { AiReviewMode, DetailStatus, LoadStatus, PullCreateBranch, PullCreateRequest, PullDetail, PullListState, PullMergeRequest, PullSummary, RemoteGroup, Translate } from '../types.js'
 
 /** Stop accumulating after this many rows so the panel stays responsive. */
 const MAX_PULLS = 300
@@ -30,7 +30,7 @@ export interface PullsView {
   /** Supported remotes only; empty when this repository has no forge. */
   remotes: RemoteGroup[]
   remote: string
-  state: 'open' | 'closed' | 'all'
+  state: PullListState
   status: LoadStatus
   pulls: PullSummary[]
   error: ApiError | null
@@ -50,7 +50,7 @@ export interface PullsView {
   /** Non-null while a reopen request is in flight. */
   reopening: number | null
   selectRemote(name: string): void
-  setState(state: 'open' | 'closed' | 'all'): void
+  setState(state: PullListState): void
   refresh(): void
   /** Fetch the next page and append it (no-op when there is nothing left). */
   loadMore(): void
@@ -124,7 +124,7 @@ export interface UsePullsOptions {
 export function usePulls({ active, repoRoot, remotes, upstream, branch, branches = [], t, onCheckedOut }: UsePullsOptions): PullsView {
   const supported = supportedRemotes(remotes)
   const [remote, setRemote] = useState('')
-  const [state, setState] = useState<'open' | 'closed' | 'all'>('open')
+  const [state, setState] = useState<PullListState>('open')
   const [pulls, setPulls] = useState<PullSummary[]>([])
   const [status, setStatus] = useState<LoadStatus>('loading')
   const [error, setError] = useState<ApiError | null>(null)
@@ -362,9 +362,11 @@ export function usePulls({ active, repoRoot, remotes, upstream, branch, branches
           const merged = [...incoming, ...current.filter(pull => !seen.has(pull.number))]
           const filtered = state === 'open'
             ? merged.filter(pull => pull.state === 'open')
-            : state === 'closed'
-              ? merged.filter(pull => pull.state !== 'open')
-              : merged
+            : state === 'merged'
+              ? merged.filter(pull => pull.state === 'merged')
+              : state === 'closed'
+                ? merged.filter(pull => pull.state !== 'open')
+                : merged
           return filtered.slice(0, MAX_PULLS)
         })
         if (selected !== null) void refreshQuietDetail(selected)
@@ -473,7 +475,7 @@ export function usePulls({ active, repoRoot, remotes, upstream, branch, branches
       })
       toast(t('pullCreated').replace('{number}', String(payload.number)))
       freshRef.current = true
-      if (state === 'closed') {
+      if (state === 'closed' || state === 'merged') {
         // A new request is open; switch to the open filter and let the reload select it.
         setState('open')
         setReload(value => value + 1)
@@ -514,9 +516,13 @@ export function usePulls({ active, repoRoot, remotes, upstream, branch, branches
         number,
         method: input.method,
         deleteSourceBranch: input.deleteSourceBranch,
+        base: input.base,
       })
       if (!payload.merged) return payload.message !== '' ? payload.message : t('pullMergeFailed')
       toast(t('pullMerged').replace('{number}', String(number)))
+      // The host fetched the base branch (and fast-forwarded it when checked
+      // out); reload the log so History shows the merge immediately.
+      onCheckedOut()
       freshRef.current = true
       setReload(value => value + 1)
       if (state === 'open') {
@@ -546,7 +552,7 @@ export function usePulls({ active, repoRoot, remotes, upstream, branch, branches
     } finally {
       setMerging(null)
     }
-  }, [merging, promptAuth, remote, remotes, repoRoot, selectPull, selected, state, t])
+  }, [merging, onCheckedOut, promptAuth, remote, remotes, repoRoot, selectPull, selected, state, t])
 
   const decideGitee = useCallback(async (action: 'review' | 'test', numberOverride?: number): Promise<PullActionResult> => {
     const number = numberOverride ?? selected

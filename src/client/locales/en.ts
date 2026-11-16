@@ -481,6 +481,7 @@ export const en = {
   pulls: 'PRs',
   pullOpen: 'Open',
   pullClosedFilter: 'Closed',
+  pullMergedFilter: 'Merged',
   pullAll: 'All',
   pullFilter: 'Pull request filter',
   pullSearch: 'Search pull requests',

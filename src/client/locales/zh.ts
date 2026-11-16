@@ -483,6 +483,7 @@ export const zh: Record<LocaleKey, string> = {
   pulls: 'PR',
   pullOpen: '开放中',
   pullClosedFilter: '已关闭',
+  pullMergedFilter: '已合并',
   pullAll: '全部',
   pullFilter: 'PR 筛选',
   pullSearch: '搜索 PR',

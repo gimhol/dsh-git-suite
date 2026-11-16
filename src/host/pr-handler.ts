@@ -15,7 +15,8 @@ interface PullBody {
   number?: unknown
   /** `checkout` (default), `close`, `reopen`, or `merge`. */
   action?: unknown
-  /** merge: `merge`, `squash`, or `rebase` (GitHub only). */
+  /** merge: the base branch to fast-forward locally after the merge. */
+  base?: unknown
   mergeMethod?: unknown
   deleteSourceBranch?: unknown
 }
@@ -140,6 +141,38 @@ function headRepoMatches(url: string, target: ForgeTarget): boolean {
 }
 
 /**
+ * After a merge the forge holds a commit the local clone has not seen. Fetch
+ * the base branch and, when it is checked out, fast-forward it so History shows
+ * the merge immediately. Every failure is non-fatal: the merge already happened.
+ */
+async function syncBaseAfterMerge(
+  root: string,
+  remote: string,
+  base: string,
+  signal: AbortSignal,
+): Promise<{ base: string; fetched: boolean; pulled: boolean }> {
+  if (base === '') return { base, fetched: false, pulled: false }
+  try {
+    await runGit(root, ['fetch', '--no-tags', remote, `+refs/heads/${base}:refs/remotes/${remote}/${base}`], signal)
+  } catch {
+    return { base, fetched: false, pulled: false }
+  }
+  let current = ''
+  try {
+    current = (await runGit(root, ['branch', '--show-current'], signal)).trim()
+  } catch {
+    current = ''
+  }
+  if (current !== base) return { base, fetched: true, pulled: false }
+  try {
+    await runGit(root, ['merge', '--ff-only', `refs/remotes/${remote}/${base}`], signal)
+    return { base, fetched: true, pulled: true }
+  } catch {
+    return { base, fetched: true, pulled: false }
+  }
+}
+
+/**
  * POST /git-suite/pr: `action: 'checkout'` fetches one pull request into a local
  * `pr/<number>` branch and switches to it; `POST /git-suite/pr-close` and
  * `POST /git-suite/pr-reopen` change its state on the forge.
@@ -221,7 +254,14 @@ export function createPullHandler(
             sourceBranch,
             signal,
           )
-          await send(res, json({ ok: true, ...result }))
+          // Keep the local clone in step so History shows the merge right away.
+          const sync = await syncBaseAfterMerge(
+            repo.root,
+            remote.name,
+            typeof body.base === 'string' ? body.base.trim() : '',
+            signal,
+          )
+          await send(res, json({ ok: true, ...result, ...sync }))
         } catch (error) {
           if (error instanceof RouteError) throw error.withDetails({ remote: remote.name })
           throw error

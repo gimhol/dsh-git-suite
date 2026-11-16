@@ -1,4 +1,4 @@
-import type { PullChecks, PullComment, PullCommit, PullCreateInput, PullDetail, PullFile, PullMergeInput, PullMergeResult, PullReview, PullSummary } from '../types.js'
+import type { PullChecks, PullComment, PullCommit, PullCreateInput, PullListState, PullDetail, PullFile, PullMergeInput, PullMergeResult, PullReview, PullSummary } from '../types.js'
 import type { ForgeTarget } from './detect.js'
 import { forgeJson } from './http.js'
 
@@ -129,12 +129,13 @@ function commitOf(commit: GitHubCommit): PullCommit {
 export async function listGithubPulls(
   target: ForgeTarget,
   token: string | null,
-  state: 'open' | 'closed' | 'all',
+  state: PullListState,
   signal?: AbortSignal,
   fresh = false,
   page = 1,
 ): Promise<PullSummary[]> {
-  const query = state === 'all' ? 'state=all' : state === 'closed' ? 'state=closed' : 'state=open'
+  // GitHub has no merged state: merged requests are closed ones with merged_at set.
+  const query = state === 'all' ? 'state=all' : state === 'open' ? 'state=open' : 'state=closed'
   const pulls = await forgeJson<GitHubPull[]>(
     target,
     `${repoPath(target)}/pulls?${query}&sort=updated&direction=desc&per_page=${PAGE_SIZE}&page=${page}`,
@@ -142,7 +143,8 @@ export async function listGithubPulls(
     signal,
     { fresh },
   )
-  return Array.isArray(pulls) ? pulls.map(summary) : []
+  const list = Array.isArray(pulls) ? pulls.map(summary) : []
+  return state === 'merged' ? list.filter(pull => pull.state === 'merged') : list
 }
 
 export async function closeGithubPull(

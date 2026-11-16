@@ -141,6 +141,9 @@ export interface ForgeInfo {
 }
 
 /** One pull request / merge request as the list shows it. */
+/** Filter for the pull request list. */
+export type PullListState = 'open' | 'closed' | 'merged' | 'all'
+
 export interface PullSummary {
   number: number
   title: string
@@ -224,6 +227,8 @@ export interface PullDetail extends PullSummary {
 export interface PullMergeRequest {
   method: 'merge' | 'squash' | 'rebase'
   deleteSourceBranch: boolean
+  /** Target branch to fast-forward locally after the merge. */
+  base?: string
 }
 
 export interface PullMergePayload {
@@ -309,7 +314,7 @@ export interface PullDraftPayload {
 export interface PullsPayload {
   ok: true
   remote: string
-  state: 'open' | 'closed' | 'all'
+  state: PullListState
   forge: ForgeInfo
   page: number
   pulls: PullSummary[]

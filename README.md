@@ -2,9 +2,11 @@
 
 English | [中文](README.zh.md)
 
-A Git suite plugin for DSH Web: history, branches, the refs tree, commit details, working-tree staging and commits, and branch switching — with amend/push options and more Git operations planned.
+A Git suite plugin for DSH Web: history, branches, the refs tree, commit details, working-tree staging and commits, branch switching, and pull requests — with amend/push options, AI commit reviews, AI-drafted pull requests, and more Git operations planned.
 
 ## Screenshots
+
+> Some screenshots may be outdated as the UI keeps evolving.
 
 **History**
 
@@ -21,6 +23,14 @@ A Git suite plugin for DSH Web: history, branches, the refs tree, commit details
 **Hunk staging and a side-by-side diff**
 
 ![Hunk staging and a side-by-side diff](assets/readme-screenshot-3.png)
+
+**Pull requests: merged filtering, checks, and actions**
+
+![Pull requests: merged filtering, checks, and actions](assets/readme-screenshot-5.png)
+
+**AI-drafted pull request with source and target branch pickers**
+
+![AI-drafted pull request with source and target branch pickers](assets/readme-screenshot-4.png)
 
 ## Requirements
 

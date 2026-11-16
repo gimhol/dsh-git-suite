@@ -1,4 +1,4 @@
-import type { PullChecks, PullComment, PullCommit, PullCreateInput, PullDetail, PullFile, PullMergeInput, PullMergeResult, PullReview, PullSummary } from '../types.js'
+import type { PullChecks, PullComment, PullCommit, PullCreateInput, PullListState, PullDetail, PullFile, PullMergeInput, PullMergeResult, PullReview, PullSummary } from '../types.js'
 import type { ForgeTarget } from './detect.js'
 import { forgeJson } from './http.js'
 
@@ -176,12 +176,13 @@ function reviewOf(approvals: GitLabApprovals | null): PullReview | null {
 export async function listGitlabPulls(
   target: ForgeTarget,
   token: string | null,
-  state: 'open' | 'closed' | 'all',
+  state: PullListState,
   signal?: AbortSignal,
   fresh = false,
   page = 1,
 ): Promise<PullSummary[]> {
-  const query = state === 'all' ? 'state=all' : state === 'closed' ? 'state=closed' : 'state=opened'
+  // GitLab names the merged state explicitly.
+  const query = state === 'all' ? 'state=all' : state === 'merged' ? 'state=merged' : state === 'closed' ? 'state=closed' : 'state=opened'
   const pulls = await forgeJson<GitLabMergeRequest[]>(
     target,
     `${projectId(target)}/merge_requests?${query}&order_by=updated_at&sort=desc&per_page=${PAGE_SIZE}&page=${page}`,
@@ -189,7 +190,8 @@ export async function listGitlabPulls(
     signal,
     { fresh },
   )
-  return Array.isArray(pulls) ? pulls.map(summary) : []
+  const list = Array.isArray(pulls) ? pulls.map(summary) : []
+  return state === 'merged' ? list.filter(pull => pull.state === 'merged') : list
 }
 
 export async function getGitlabPull(

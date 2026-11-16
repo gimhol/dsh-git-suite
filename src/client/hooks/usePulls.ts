@@ -3,7 +3,7 @@ import { toast } from '../components/Toast.js'
 import { useCallback, useEffect, useRef, useState } from '../runtime.js'
 import { isAbortError, requestCredential, requestPull, requestPullAiReviewStream, requestPullCheckout, requestPullClose, requestPullCreate, requestPullDelete, requestPullGiteeDecision, requestPullMerge, requestPullReopen, requestPulls, toApiError, type ApiError } from '../lib/api.js'
 import { defaultForgeRemote, forgeOf, supportedRemotes } from '../lib/forge.js'
-import type { AiReviewMode, DetailStatus, LoadStatus, PullCreateRequest, PullDetail, PullMergeRequest, PullSummary, RemoteGroup, Translate } from '../types.js'
+import type { AiReviewMode, DetailStatus, LoadStatus, PullCreateBranch, PullCreateRequest, PullDetail, PullListState, PullMergeRequest, PullSummary, RemoteGroup, Translate } from '../types.js'
 
 /** Stop accumulating after this many rows so the panel stays responsive. */
 const MAX_PULLS = 300
@@ -30,7 +30,7 @@ export interface PullsView {
   /** Supported remotes only; empty when this repository has no forge. */
   remotes: RemoteGroup[]
   remote: string
-  state: 'open' | 'closed' | 'all'
+  state: PullListState
   status: LoadStatus
   pulls: PullSummary[]
   error: ApiError | null
@@ -50,7 +50,7 @@ export interface PullsView {
   /** Non-null while a reopen request is in flight. */
   reopening: number | null
   selectRemote(name: string): void
-  setState(state: 'open' | 'closed' | 'all'): void
+  setState(state: PullListState): void
   refresh(): void
   /** Fetch the next page and append it (no-op when there is nothing left). */
   loadMore(): void
@@ -90,6 +90,10 @@ export interface PullsView {
   headBranch: string
   /** Remote that owns the source branch (for a cross-repository request). */
   headRemote: string
+  /** Repository root, for host features that read local git data. */
+  repoRoot: string
+  /** Local branches with their upstream refs, for the create dialog. */
+  localBranches: readonly PullCreateBranch[]
   /** The remote's default branch, used to prefill the create form. */
   defaultBase: string
   /** Open a request from the current branch; resolves with an error message, or null. */
@@ -105,6 +109,8 @@ export interface UsePullsOptions {
   upstream: string
   /** Checked-out branch, shown as the source of a new request. */
   branch: string
+  /** Local branches with their upstream refs, for the create dialog's From picker. */
+  branches?: readonly PullCreateBranch[]
   t: Translate
   /** Called after a pull request was checked out, so the panel reloads. */
   onCheckedOut(): void
@@ -115,10 +121,10 @@ export interface UsePullsOptions {
  * detail, credential prompting, and local checkout. Requests stay lazy: while
  * the history or commit view is visible nothing here talks to the network.
  */
-export function usePulls({ active, repoRoot, remotes, upstream, branch, t, onCheckedOut }: UsePullsOptions): PullsView {
+export function usePulls({ active, repoRoot, remotes, upstream, branch, branches = [], t, onCheckedOut }: UsePullsOptions): PullsView {
   const supported = supportedRemotes(remotes)
   const [remote, setRemote] = useState('')
-  const [state, setState] = useState<'open' | 'closed' | 'all'>('open')
+  const [state, setState] = useState<PullListState>('open')
   const [pulls, setPulls] = useState<PullSummary[]>([])
   const [status, setStatus] = useState<LoadStatus>('loading')
   const [error, setError] = useState<ApiError | null>(null)
@@ -356,9 +362,11 @@ export function usePulls({ active, repoRoot, remotes, upstream, branch, t, onChe
           const merged = [...incoming, ...current.filter(pull => !seen.has(pull.number))]
           const filtered = state === 'open'
             ? merged.filter(pull => pull.state === 'open')
-            : state === 'closed'
-              ? merged.filter(pull => pull.state !== 'open')
-              : merged
+            : state === 'merged'
+              ? merged.filter(pull => pull.state === 'merged')
+              : state === 'closed'
+                ? merged.filter(pull => pull.state !== 'open')
+                : merged
           return filtered.slice(0, MAX_PULLS)
         })
         if (selected !== null) void refreshQuietDetail(selected)
@@ -458,15 +466,16 @@ export function usePulls({ active, repoRoot, remotes, upstream, branch, t, onChe
     try {
       const payload = await requestPullCreate({
         path: repoRoot,
-        remote,
+        remote: input.remote ?? remote,
         title: input.title,
         body: input.body,
         base: input.base,
+        head: input.head,
         draft: input.draft,
       })
       toast(t('pullCreated').replace('{number}', String(payload.number)))
       freshRef.current = true
-      if (state === 'closed') {
+      if (state === 'closed' || state === 'merged') {
         // A new request is open; switch to the open filter and let the reload select it.
         setState('open')
         setReload(value => value + 1)
@@ -490,7 +499,10 @@ export function usePulls({ active, repoRoot, remotes, upstream, branch, t, onChe
         return t('pullBranchNotPushed').replace('{branch}', name)
       }
       if (apiError.code === 'detached-head') return t('pullDetached')
-      return apiError.message
+      // The host folds the forge's own reason into the message; keep any
+      // separate detail too so a duplicate request is obvious.
+      const detail = typeof apiError.details?.detail === 'string' ? apiError.details.detail : ''
+      return detail === '' || apiError.message.includes(detail) ? apiError.message : `${apiError.message} ${detail}`
     } finally {
       creatingRef.current = false
     }
@@ -507,9 +519,13 @@ export function usePulls({ active, repoRoot, remotes, upstream, branch, t, onChe
         number,
         method: input.method,
         deleteSourceBranch: input.deleteSourceBranch,
+        base: input.base,
       })
       if (!payload.merged) return payload.message !== '' ? payload.message : t('pullMergeFailed')
       toast(t('pullMerged').replace('{number}', String(number)))
+      // The host fetched the base branch (and fast-forwarded it when checked
+      // out); reload the log so History shows the merge immediately.
+      onCheckedOut()
       freshRef.current = true
       setReload(value => value + 1)
       if (state === 'open') {
@@ -539,7 +555,7 @@ export function usePulls({ active, repoRoot, remotes, upstream, branch, t, onChe
     } finally {
       setMerging(null)
     }
-  }, [merging, promptAuth, remote, remotes, repoRoot, selectPull, selected, state, t])
+  }, [merging, onCheckedOut, promptAuth, remote, remotes, repoRoot, selectPull, selected, state, t])
 
   const decideGitee = useCallback(async (action: 'review' | 'test', numberOverride?: number): Promise<PullActionResult> => {
     const number = numberOverride ?? selected
@@ -858,6 +874,8 @@ export function usePulls({ active, repoRoot, remotes, upstream, branch, t, onChe
     clearAiReview,
     headBranch: branch,
     headRemote: upstream.includes('/') ? upstream.slice(0, upstream.indexOf('/')) : remote,
+    repoRoot,
+    localBranches: branches,
     defaultBase,
     createPull,
   }

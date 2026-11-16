@@ -2,9 +2,11 @@
 
 [English](README.md) | 中文
 
-DSH Web 的 Git 套件插件：提供提交历史、分支、引用树、提交详情、文件状态/暂存/提交与分支切换，支持提交后可选的修改/推送，后续继续扩展更多 Git 操作。
+DSH Web 的 Git 套件插件：提供提交历史、分支、引用树、提交详情、文件状态/暂存/提交、分支切换与 Pull requests，支持提交后可选的修改/推送、AI 提交评审与 AI 起草 PR，后续继续扩展更多 Git 操作。
 
 ## 截图
+
+> 部分截图可能已过时，请以实际界面为准。
 
 **提交历史**
 
@@ -21,6 +23,14 @@ DSH Web 的 Git 套件插件：提供提交历史、分支、引用树、提交�
 **按块暂存与分栏差异**
 
 ![按块暂存与分栏差异](assets/readme-screenshot-3.png)
+
+**Pull requests：已合并筛选、检查与操作**
+
+![Pull requests：已合并筛选、检查与操作](assets/readme-screenshot-5.png)
+
+**AI 起草 Pull request：可选源分支与目标分支**
+
+![AI 起草 Pull request：可选源分支与目标分支](assets/readme-screenshot-4.png)
 
 ## 环境
 

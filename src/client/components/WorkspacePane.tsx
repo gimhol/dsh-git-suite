@@ -531,7 +531,19 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
                 )}
           </span>
         </div>
-        <div className={cls('dsh-gitlog-workspace-list')}>
+        <div
+          className={cls('dsh-gitlog-workspace-list')}
+          tabIndex={0}
+          role="group"
+          aria-label={isStaged ? t('stagedFiles') : t('unstagedFiles')}
+          onKeyDown={event => {
+            // Ctrl/Cmd+A checks every file instead of selecting page text.
+            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
+              event.preventDefault()
+              setChecked(current => ({ ...current, [group]: files.map(file => file.path) }))
+            }
+          }}
+        >
           {files.length === 0
             ? <p className={cls('dsh-gitlog-workspace-empty')}>{isStaged ? t('noStaged') : t('noUnstaged')}</p>
             : files.map(file => fileRow(file))}

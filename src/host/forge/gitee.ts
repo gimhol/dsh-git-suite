@@ -1,4 +1,4 @@
-import type { PullApproval, PullComment, PullCommit, PullCreateInput, PullDetail, PullFile, PullMergeInput, PullMergeResult, PullSummary } from '../types.js'
+import type { PullApproval, PullComment, PullCommit, PullCreateInput, PullListState, PullDetail, PullFile, PullMergeInput, PullMergeResult, PullSummary } from '../types.js'
 import type { ForgeTarget } from './detect.js'
 import { forgeJson } from './http.js'
 
@@ -133,12 +133,13 @@ function commitOf(commit: GiteeCommit): PullCommit {
 export async function listGiteePulls(
   target: ForgeTarget,
   token: string | null,
-  state: 'open' | 'closed' | 'all',
+  state: PullListState,
   signal?: AbortSignal,
   fresh = false,
   page = 1,
 ): Promise<PullSummary[]> {
-  const query = state === 'all' ? 'state=all' : state === 'closed' ? 'state=closed' : 'state=open'
+  // Gitee has a real merged state.
+  const query = state === 'all' ? 'state=all' : state === 'merged' ? 'state=merged' : state === 'closed' ? 'state=closed' : 'state=open'
   const pulls = await forgeJson<GiteePull[]>(
     target,
     `${repoPath(target)}/pulls?${query}&sort=updated&direction=desc&per_page=${PAGE_SIZE}&page=${page}`,
@@ -146,7 +147,8 @@ export async function listGiteePulls(
     signal,
     { fresh },
   )
-  return Array.isArray(pulls) ? pulls.map(summary) : []
+  const list = Array.isArray(pulls) ? pulls.map(summary) : []
+  return state === 'merged' ? list.filter(pull => pull.state === 'merged') : list
 }
 
 export async function getGiteePull(

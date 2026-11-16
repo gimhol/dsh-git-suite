@@ -217,6 +217,9 @@ export interface ForgeInfo {
 }
 
 /** One pull request / merge request as the list shows it. */
+/** Filter for a pull request list page. */
+export type PullListState = 'open' | 'closed' | 'merged' | 'all'
+
 export interface PullSummary {
   number: number
   title: string

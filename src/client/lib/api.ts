@@ -34,11 +34,14 @@ import type {
   PullMergeRequest,
   PullGiteeDecisionPayload,
   PullDeletePayload,
+  PullListState,
   PullAiReviewPayload,
   AiReviewMode,
   AiReviewStreamEvent,
   CommitReviewPayload,
   CommitReviewStreamEvent,
+  PullDraftPayload,
+  PullDraftRequest,
 } from '../types.js'
 
 export interface ErrorDetails {
@@ -80,7 +83,7 @@ export interface RequestParams {
   /** session-repo: which Session's working directory to resolve. */
   session?: string
   /** pulls/pull: open pull requests only, or every state. */
-  state?: 'open' | 'closed' | 'all'
+  state?: PullListState
   /** pull: the pull request number. */
   number?: string
   /** pulls: the 1-based page to request. */
@@ -264,7 +267,7 @@ export async function requestOpenApp(body: OpenAppRequest, signal?: AbortSignal)
 
 /** GET /git-suite?mode=pulls: one page of pull requests for one remote. */
 export async function requestPulls(
-  params: { path: string; remote: string; state?: 'open' | 'closed' | 'all'; page?: number; fresh?: boolean },
+  params: { path: string; remote: string; state?: PullListState; page?: number; fresh?: boolean },
   signal?: AbortSignal,
 ): Promise<PullsPayload> {
   return requestJson<PullsPayload>({
@@ -279,7 +282,7 @@ export async function requestPulls(
 
 /** GET /git-suite?mode=pull: one pull request with its files and commits. */
 export async function requestPull(
-  params: { path: string; remote: string; number: number; state?: 'open' | 'closed' | 'all'; fresh?: boolean },
+  params: { path: string; remote: string; number: number; state?: PullListState; fresh?: boolean },
   signal?: AbortSignal,
 ): Promise<PullPayload> {
   return requestJson<PullPayload>({
@@ -588,6 +591,11 @@ export async function requestCommitReviewStream(
 export interface RevealFileRequest {
   path: string
   file: string
+}
+
+/** POST /git-suite/pr-generate: draft a pull request title and body with the default model. */
+export async function requestPullDraft(body: PullDraftRequest, signal?: AbortSignal): Promise<PullDraftPayload> {
+  return postCommitJson<PullDraftPayload>('/git-suite/pr-generate', body, signal)
 }
 
 /** POST /git-suite/reveal: show one working-tree file in the OS file browser. */

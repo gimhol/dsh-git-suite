@@ -1,4 +1,4 @@
-import type { PullCreateInput, PullDetail, PullMergeInput, PullMergeResult, PullSummary } from '../types.js'
+import type { PullCreateInput, PullListState, PullDetail, PullMergeInput, PullMergeResult, PullSummary } from '../types.js'
 import type { ForgeTarget } from './detect.js'
 import { getGiteePull, listGiteePulls, closeGiteePull, reopenGiteePull, createGiteePull, mergeGiteePull, reviewGiteePull, testGiteePull } from './gitee.js'
 import { getGithubPull, listGithubPulls, closeGithubPull, reopenGithubPull, createGithubPull, mergeGithubPull } from './github.js'
@@ -12,7 +12,7 @@ export const PULL_PAGE_SIZE = 30
 export function listPulls(
   target: ForgeTarget,
   token: string | null,
-  state: 'open' | 'closed' | 'all',
+  state: PullListState,
   signal?: AbortSignal,
   fresh = false,
   page = 1,

@@ -141,6 +141,9 @@ export interface ForgeInfo {
 }
 
 /** One pull request / merge request as the list shows it. */
+/** Filter for the pull request list. */
+export type PullListState = 'open' | 'closed' | 'merged' | 'all'
+
 export interface PullSummary {
   number: number
   title: string
@@ -224,6 +227,8 @@ export interface PullDetail extends PullSummary {
 export interface PullMergeRequest {
   method: 'merge' | 'squash' | 'rebase'
   deleteSourceBranch: boolean
+  /** Target branch to fast-forward locally after the merge. */
+  base?: string
 }
 
 export interface PullMergePayload {
@@ -290,10 +295,26 @@ export interface CommitReviewPayload {
   truncated: boolean
 }
 
+/** Request for an AI-drafted pull request title and body. */
+export interface PullDraftRequest {
+  path: string
+  remote: string
+  base: string
+  head: string
+  language?: string
+}
+
+/** AI-drafted pull request title and body. */
+export interface PullDraftPayload {
+  ok: true
+  title: string
+  body: string
+}
+
 export interface PullsPayload {
   ok: true
   remote: string
-  state: 'open' | 'closed' | 'all'
+  state: PullListState
   forge: ForgeInfo
   page: number
   pulls: PullSummary[]
@@ -301,10 +322,21 @@ export interface PullsPayload {
   hasMore: boolean
 }
 
+/** One local branch offered as a request source. */
+export interface PullCreateBranch {
+  name: string
+  /** Upstream ref (`origin/main`) when the branch tracks one. */
+  upstream: string | null
+}
+
 export interface PullCreateRequest {
   title: string
   body: string
   base: string
+  /** Target remote for `base`; defaults to the pulls view's selected remote. */
+  remote?: string
+  /** Local branch to open the request from; defaults to the checked-out branch. */
+  head?: string
   draft: boolean
 }
 

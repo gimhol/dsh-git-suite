@@ -546,6 +546,7 @@ export function PullsPane({ view, t, narrow, repoKey }: PullsPaneProps): React.R
           options={[
             { value: 'open' as const, label: t('pullOpen') },
             { value: 'closed' as const, label: t('pullClosedFilter') },
+            { value: 'merged' as const, label: t('pullMergedFilter') },
             { value: 'all' as const, label: t('pullAll') },
           ]}
           onChange={view.setState}

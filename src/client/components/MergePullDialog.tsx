@@ -57,7 +57,7 @@ export function MergePullDialog({ view, pull, t, onClose }: MergePullDialogProps
     if (mergeBusy) return
     setBusy(true)
     setError(null)
-    const message = await view.mergePull({ method, deleteSourceBranch })
+    const message = await view.mergePull({ method, deleteSourceBranch, base: pull.targetBranch })
     if (message === null) {
       onClose()
       return

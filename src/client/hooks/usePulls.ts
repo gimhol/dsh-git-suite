@@ -3,7 +3,7 @@ import { toast } from '../components/Toast.js'
 import { useCallback, useEffect, useRef, useState } from '../runtime.js'
 import { isAbortError, requestCredential, requestPull, requestPullAiReviewStream, requestPullCheckout, requestPullClose, requestPullCreate, requestPullDelete, requestPullGiteeDecision, requestPullMerge, requestPullReopen, requestPulls, toApiError, type ApiError } from '../lib/api.js'
 import { defaultForgeRemote, forgeOf, supportedRemotes } from '../lib/forge.js'
-import type { AiReviewMode, DetailStatus, LoadStatus, PullCreateRequest, PullDetail, PullMergeRequest, PullSummary, RemoteGroup, Translate } from '../types.js'
+import type { AiReviewMode, DetailStatus, LoadStatus, PullCreateBranch, PullCreateRequest, PullDetail, PullMergeRequest, PullSummary, RemoteGroup, Translate } from '../types.js'
 
 /** Stop accumulating after this many rows so the panel stays responsive. */
 const MAX_PULLS = 300
@@ -90,6 +90,10 @@ export interface PullsView {
   headBranch: string
   /** Remote that owns the source branch (for a cross-repository request). */
   headRemote: string
+  /** Repository root, for host features that read local git data. */
+  repoRoot: string
+  /** Local branches with their upstream refs, for the create dialog. */
+  localBranches: readonly PullCreateBranch[]
   /** The remote's default branch, used to prefill the create form. */
   defaultBase: string
   /** Open a request from the current branch; resolves with an error message, or null. */
@@ -105,6 +109,8 @@ export interface UsePullsOptions {
   upstream: string
   /** Checked-out branch, shown as the source of a new request. */
   branch: string
+  /** Local branches with their upstream refs, for the create dialog's From picker. */
+  branches?: readonly PullCreateBranch[]
   t: Translate
   /** Called after a pull request was checked out, so the panel reloads. */
   onCheckedOut(): void
@@ -115,7 +121,7 @@ export interface UsePullsOptions {
  * detail, credential prompting, and local checkout. Requests stay lazy: while
  * the history or commit view is visible nothing here talks to the network.
  */
-export function usePulls({ active, repoRoot, remotes, upstream, branch, t, onCheckedOut }: UsePullsOptions): PullsView {
+export function usePulls({ active, repoRoot, remotes, upstream, branch, branches = [], t, onCheckedOut }: UsePullsOptions): PullsView {
   const supported = supportedRemotes(remotes)
   const [remote, setRemote] = useState('')
   const [state, setState] = useState<'open' | 'closed' | 'all'>('open')
@@ -458,10 +464,11 @@ export function usePulls({ active, repoRoot, remotes, upstream, branch, t, onChe
     try {
       const payload = await requestPullCreate({
         path: repoRoot,
-        remote,
+        remote: input.remote ?? remote,
         title: input.title,
         body: input.body,
         base: input.base,
+        head: input.head,
         draft: input.draft,
       })
       toast(t('pullCreated').replace('{number}', String(payload.number)))
@@ -858,6 +865,8 @@ export function usePulls({ active, repoRoot, remotes, upstream, branch, t, onChe
     clearAiReview,
     headBranch: branch,
     headRemote: upstream.includes('/') ? upstream.slice(0, upstream.indexOf('/')) : remote,
+    repoRoot,
+    localBranches: branches,
     defaultBase,
     createPull,
   }

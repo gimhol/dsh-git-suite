@@ -15,6 +15,8 @@ interface CreateBody {
   title?: unknown
   body?: unknown
   base?: unknown
+  /** Local branch to open the request from; defaults to the checked-out branch. */
+  head?: unknown
   draft?: unknown
 }
 
@@ -62,10 +64,19 @@ function text(value: unknown): string {
 async function headRef(
   root: string,
   signal: AbortSignal,
+  requested = '',
 ): Promise<{ local: string; remote: string; branch: string }> {
-  const local = (await runGit(root, ['branch', '--show-current'], signal)).trim()
+  const local = requested === ''
+    ? (await runGit(root, ['branch', '--show-current'], signal)).trim()
+    : requested
   if (local === '') {
     throw new RouteError(409, 'detached-head', 'Check out a local branch before creating a pull request.')
+  }
+  // A branch chosen in the dialog must still exist locally.
+  try {
+    await runGit(root, ['rev-parse', '--verify', '--quiet', `refs/heads/${local}`], signal)
+  } catch {
+    throw new RouteError(400, 'unknown-branch', 'That local branch no longer exists.', { branch: local })
   }
   let remote = ''
   let branch = local
@@ -155,7 +166,7 @@ export function createPullCreateHandler(context: RouteContext): (req: IncomingMe
         throw new RouteError(400, 'forge-unsupported', 'This remote is not hosted on a supported forge.', { remote: remote.name })
       }
 
-      const headInfo = await headRef(repo.root, signal)
+      const headInfo = await headRef(repo.root, signal, text(body.head))
       const headRemoteName = headInfo.remote === '' ? remote.name : headInfo.remote
       const headRemote = headRemoteName === remote.name
         ? remote

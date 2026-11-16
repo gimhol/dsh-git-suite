@@ -109,6 +109,9 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
     remotes: view.tree?.remotes ?? [],
     upstream: ws.status?.upstream ?? '',
     branch: view.repo?.branch ?? '',
+    branches: (view.tree?.branches ?? [])
+      .filter(branch => branch.kind === 'local')
+      .map(branch => ({ name: branch.name, upstream: branch.upstream ?? null })),
     t,
     onCheckedOut: () => {
       view.refresh()

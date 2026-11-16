@@ -290,6 +290,22 @@ export interface CommitReviewPayload {
   truncated: boolean
 }
 
+/** Request for an AI-drafted pull request title and body. */
+export interface PullDraftRequest {
+  path: string
+  remote: string
+  base: string
+  head: string
+  language?: string
+}
+
+/** AI-drafted pull request title and body. */
+export interface PullDraftPayload {
+  ok: true
+  title: string
+  body: string
+}
+
 export interface PullsPayload {
   ok: true
   remote: string
@@ -301,10 +317,21 @@ export interface PullsPayload {
   hasMore: boolean
 }
 
+/** One local branch offered as a request source. */
+export interface PullCreateBranch {
+  name: string
+  /** Upstream ref (`origin/main`) when the branch tracks one. */
+  upstream: string | null
+}
+
 export interface PullCreateRequest {
   title: string
   body: string
   base: string
+  /** Target remote for `base`; defaults to the pulls view's selected remote. */
+  remote?: string
+  /** Local branch to open the request from; defaults to the checked-out branch. */
+  head?: string
   draft: boolean
 }
 

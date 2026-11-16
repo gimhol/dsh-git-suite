@@ -467,6 +467,8 @@ export const zh: Record<LocaleKey, string> = {
   commitReviewNoSession: '当前页面没有绑定会话。',
   commitReviewRegenerate: '重新生成',
   diffDialogOpen: '在独立弹窗中打开',
+  pullCreateGenerate: 'AI 生成',
+  pullCreateGenerating: '生成中…',
   details: '提交详情',
   resizeTree: '调整分支树大小',
   resizeCommitFiles: '调整文件列表宽度',

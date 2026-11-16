@@ -39,6 +39,8 @@ import type {
   AiReviewStreamEvent,
   CommitReviewPayload,
   CommitReviewStreamEvent,
+  PullDraftPayload,
+  PullDraftRequest,
 } from '../types.js'
 
 export interface ErrorDetails {
@@ -588,6 +590,11 @@ export async function requestCommitReviewStream(
 export interface RevealFileRequest {
   path: string
   file: string
+}
+
+/** POST /git-suite/pr-generate: draft a pull request title and body with the default model. */
+export async function requestPullDraft(body: PullDraftRequest, signal?: AbortSignal): Promise<PullDraftPayload> {
+  return postCommitJson<PullDraftPayload>('/git-suite/pr-generate', body, signal)
 }
 
 /** POST /git-suite/reveal: show one working-tree file in the OS file browser. */

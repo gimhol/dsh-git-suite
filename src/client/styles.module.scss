@@ -3708,6 +3708,18 @@ $brand: var(--dsw-alias-brand-primary);
     }
   }
 
+  // Title input with the icon-only AI draft button on its right.
+  &-pull-create-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    > input {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+  }
+
   &-pull-create-head {
     @include control-surface(10px);
     display: flex;

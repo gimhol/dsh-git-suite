@@ -82,8 +82,71 @@ export interface ShortcutCommandRegistration {
   resolve(context: { modal?: string | null }): { status: 'handled'; run(): void } | { status: 'blocked'; reason: string } | { status: 'pass' }
 }
 
+/** A physical key combination, as the shortcut registry represents it. */
+export interface ShortcutBindingDescriptor {
+  code: string
+  secondCode?: string
+  modifiers: readonly string[]
+}
+
+/** One row of the window's effective keyboard catalog. */
+export interface ShortcutCatalogEntry {
+  id: string
+  label: string
+  keys: readonly string[]
+  binding: ShortcutBindingDescriptor | null
+  modified: boolean
+  conflicts: readonly string[]
+  issue: string | null
+}
+
+/** Accepted preference state and its opaque revision. */
+export interface ShortcutConfigSnapshot {
+  revision: string
+  status: 'loading' | 'ready' | 'unreadable'
+  error: string | null
+}
+
+/** One revision-checked preference edit. */
+export type ShortcutEdit =
+  | { type: 'set'; id: string; binding: ShortcutBindingDescriptor | null }
+  | { type: 'reset'; id: string }
+
+/** Classified outcome of a preference edit; failures keep the accepted state. */
+export interface ShortcutSaveResult {
+  status: 'saved' | 'stale' | 'unreadable' | 'write-failed' | 'not-ready' | 'conflict'
+  issue?: string
+  conflicts?: readonly string[]
+}
+
+/** Snapshot source shared by the browser store and the Host bridge. */
+export interface ObservableSnapshot<T> {
+  getSnapshot(): T
+  subscribe(listener: () => void): () => void
+}
+
+/** The window's keyboard service: registration plus the catalog users edit. */
 export interface ShortcutsService {
   register(command: ShortcutCommandRegistration): () => void
+  readonly catalog: ObservableSnapshot<readonly ShortcutCatalogEntry[]>
+  readonly config: ObservableSnapshot<ShortcutConfigSnapshot>
+  /** Explain a candidate combination before saving it. */
+  describeBinding(binding: ShortcutBindingDescriptor | null): {
+    binding: ShortcutBindingDescriptor | null
+    keys: readonly string[]
+    issue: string | null
+    conflicts: readonly string[]
+  }
+  /** Persist one reviewed edit against the accepted revision. */
+  edit(edit: ShortcutEdit, revision: string): Promise<ShortcutSaveResult>
+  /** Suppress native menu accelerators while a recorder owns the keyboard. */
+  recording?(active: boolean): Promise<void>
+}
+
+/** Cross-plugin navigation of the main column's registered panels. */
+export interface LayoutService {
+  /** Select a registered main panel by key; null returns to the Conversation. */
+  selectPanel(panelId: string | null): void
 }
 
 /** The right sidebar's navigation service: open (and focus) a tab by kind. */
@@ -105,6 +168,8 @@ export interface ClientContext {
   sidebarRight?: SidebarRightService
   /** Present only inside `inject(['shortcuts'], …)`. */
   shortcuts?: ShortcutsService
+  /** Present only inside `inject(['layout'], …)`. */
+  layout?: LayoutService
 }
 
 export interface ClientPlugin {

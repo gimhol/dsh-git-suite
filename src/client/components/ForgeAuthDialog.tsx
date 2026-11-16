@@ -3,6 +3,7 @@ import { h, useState } from '../runtime.js'
 import type { Translate } from '../types.js'
 import { Button, DialogActions } from './Button.js'
 import { DialogShell } from './DialogShell.js'
+import { cls } from '../styles.js'
 
 export interface ForgeAuthPrompt {
   provider: string
@@ -39,9 +40,9 @@ export function ForgeAuthDialog({ prompt, busy, error, t, onSubmit, onClose }: F
 
   return (
     <DialogShell title={t('pullAuthTitle')} t={t} onClose={onClose}>
-      <p className="dsh-gitlog-note">{t('pullAuthBody').replace('{host}', prompt.host)}</p>
-      <div className="dsh-gitlog-credential">
-        <label className="dsh-gitlog-field">
+      <p className={cls('dsh-gitlog-note')}>{t('pullAuthBody').replace('{host}', prompt.host)}</p>
+      <div className={cls('dsh-gitlog-credential')}>
+        <label className={cls('dsh-gitlog-field')}>
           <span>{t('pullAuthUser')}</span>
           <input
             type="text"
@@ -57,7 +58,7 @@ export function ForgeAuthDialog({ prompt, busy, error, t, onSubmit, onClose }: F
             spellCheck={false}
           />
         </label>
-        <label className="dsh-gitlog-field">
+        <label className={cls('dsh-gitlog-field')}>
           <span>{t('pullAuthToken')}</span>
           <input
             type="password"
@@ -73,10 +74,10 @@ export function ForgeAuthDialog({ prompt, busy, error, t, onSubmit, onClose }: F
             autoFocus
           />
         </label>
-        <p className="dsh-gitlog-field-hint">{t('pullAuthUserHint')}</p>
-        <p className="dsh-gitlog-field-hint">{t('pullAuthHint')}</p>
+        <p className={cls('dsh-gitlog-field-hint')}>{t('pullAuthUserHint')}</p>
+        <p className={cls('dsh-gitlog-field-hint')}>{t('pullAuthHint')}</p>
       </div>
-      {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
+      {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
       <DialogActions>
         <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
         <Button variant="primary" disabled={!ready} onClick={submit}>

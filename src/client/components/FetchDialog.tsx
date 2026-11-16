@@ -4,6 +4,7 @@ import type { WorkspaceView } from '../hooks/useWorkspace.js'
 import type { Translate } from '../types.js'
 import { DialogShell } from './DialogShell.js'
 import { Button, DialogActions } from './Button.js'
+import { cls } from '../styles.js'
 
 export interface FetchDialogProps {
   ws: WorkspaceView
@@ -23,7 +24,7 @@ export function FetchDialog({ ws, t, onClose }: FetchDialogProps): React.ReactEl
     onChange: (value: boolean) => void,
     label: string,
   ): React.ReactElement => (
-    <label className="dsh-gitlog-check dsh-gitlog-fetch-option">
+    <label className={cls('dsh-gitlog-check dsh-gitlog-fetch-option')}>
       <input type="checkbox" checked={checked} onChange={event => onChange(event.target.checked)} />
       <span>{label}</span>
     </label>
@@ -31,10 +32,10 @@ export function FetchDialog({ ws, t, onClose }: FetchDialogProps): React.ReactEl
 
   return (
     <DialogShell title={t('fetch')} t={t} wide onClose={onClose}>
-      <div className="dsh-gitlog-fetch-options">
+      <div className={cls('dsh-gitlog-fetch-options')}>
         {option(fetchAll, setFetchAll, t('fetchAllRemotes'))}
         {option(prune, setPrune, t('pruneTracking'))}
-        <div className="dsh-gitlog-fetch-tags">
+        <div className={cls('dsh-gitlog-fetch-tags')}>
           {option(tags, setTags, t('fetchAllTags'))}
           {option(forceTags, setForceTags, t('forceTags'))}
         </div>

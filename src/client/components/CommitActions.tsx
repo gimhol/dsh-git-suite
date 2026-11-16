@@ -11,6 +11,7 @@ import { OperationConflictDialog } from './OperationConflictDialog.js'
 import { ReflogDialog } from './ReflogDialog.js'
 import { ResetCommitDialog } from './ResetCommitDialog.js'
 import { toast } from './Toast.js'
+import { cls } from '../styles.js'
 
 export interface CommitContext {
   commit: Commit
@@ -40,7 +41,7 @@ function repoPath(view: GitLogView): string {
 
 function CommitTarget({ commit }: { commit: Commit }): React.ReactElement {
   return (
-    <p className="dsh-gitlog-dialog-target">
+    <p className={cls('dsh-gitlog-dialog-target')}>
       <code>{commit.shortHash}</code>
       <span>{commit.subject}</span>
     </p>
@@ -86,8 +87,8 @@ function TagDialog({ view, commit, t, onClose }: CommitDialogProps): React.React
 
   return (
     <DialogShell title={t('tagDialogTitle')} t={t} onClose={onClose}>
-      <div className="dsh-gitlog-repo-form">
-        <label className="dsh-gitlog-field">
+      <div className={cls('dsh-gitlog-repo-form')}>
+        <label className={cls('dsh-gitlog-field')}>
           <span>{t('tagName')}</span>
           <input
             type="text"
@@ -113,10 +114,10 @@ function TagDialog({ view, commit, t, onClose }: CommitDialogProps): React.React
           onChange={setBase}
           onSubmit={() => { void saveTag() }}
         />
-        <label className="dsh-gitlog-field">
+        <label className={cls('dsh-gitlog-field')}>
           <span>{t('tagMessage')}</span>
           <textarea
-            className="dsh-gitlog-workspace-message"
+            className={cls('dsh-gitlog-workspace-message')}
             value={message}
             onChange={event => setMessage(event.target.value)}
             placeholder={t('tagMessagePlaceholder')}
@@ -124,7 +125,7 @@ function TagDialog({ view, commit, t, onClose }: CommitDialogProps): React.React
             spellCheck={false}
           />
         </label>
-        <label className="dsh-gitlog-check">
+        <label className={cls('dsh-gitlog-check')}>
           <input
             type="checkbox"
             checked={force}
@@ -132,8 +133,8 @@ function TagDialog({ view, commit, t, onClose }: CommitDialogProps): React.React
           />
           {t('tagForce')}
         </label>
-        {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
-        <DialogActions className="dsh-gitlog-settings-actions">
+        {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
+        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
           <Button onClick={onClose}>{t('cancel')}</Button>
           <Button type="button" variant="primary" disabled={busy} onClick={() => { void saveTag() }}>
             {busy ? t('tagSaving') : t('tagSave')}
@@ -178,8 +179,8 @@ function BranchDialog({ view, commit, t, onClose }: CommitDialogProps): React.Re
 
   return (
     <DialogShell title={t('branchDialogTitle')} t={t} onClose={onClose}>
-      <div className="dsh-gitlog-repo-form">
-        <label className="dsh-gitlog-field">
+      <div className={cls('dsh-gitlog-repo-form')}>
+        <label className={cls('dsh-gitlog-field')}>
           <span>{t('branchName')}</span>
           <input
             type="text"
@@ -205,8 +206,8 @@ function BranchDialog({ view, commit, t, onClose }: CommitDialogProps): React.Re
           onChange={setBase}
           onSubmit={() => { void createBranch() }}
         />
-        {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
-        <DialogActions className="dsh-gitlog-settings-actions">
+        {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
+        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
           <Button onClick={onClose}>{t('cancel')}</Button>
           <Button type="button" variant="primary" disabled={busy} onClick={() => { void createBranch() }}>
             {busy ? t('branchSaving') : t('branchCreate')}
@@ -246,9 +247,9 @@ function CheckoutDialog({ view, commit, t, onClose }: CommitDialogProps): React.
 
   return (
     <DialogShell title={t('checkoutDialogTitle')} t={t} onClose={onClose}>
-      <div className="dsh-gitlog-repo-form">
+      <div className={cls('dsh-gitlog-repo-form')}>
         <CommitTarget commit={commit} />
-        <fieldset className="dsh-gitlog-checkout-options">
+        <fieldset className={cls('dsh-gitlog-checkout-options')}>
           <legend>{t('checkoutTarget')}</legend>
           <label>
             <input
@@ -271,13 +272,13 @@ function CheckoutDialog({ view, commit, t, onClose }: CommitDialogProps): React.
             </label>
           ))}
         </fieldset>
-        <p className="dsh-gitlog-warning" role="alert">
+        <p className={cls('dsh-gitlog-warning')} role="alert">
           {detached
             ? t('checkoutWarningDetached')
             : t('checkoutWarningBranch').replace('{name}', target)}
         </p>
-        {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
-        <DialogActions className="dsh-gitlog-settings-actions">
+        {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
+        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
           <Button onClick={onClose}>{t('cancel')}</Button>
           <Button type="button" variant="primary" disabled={busy} onClick={() => { void confirmCheckout() }}>
             {busy ? t('checkingOut') : t('checkoutConfirm')}
@@ -384,7 +385,7 @@ export function CommitActions({ view, context, t, onClose, onChanged, onRebaseOn
   return (
     <div
       ref={menuRef}
-      className="dsh-gitlog-commit-menu"
+      className={cls('dsh-gitlog-commit-menu')}
       style={{ left, top }}
       role="menu"
       aria-label={t('commitMenu')}

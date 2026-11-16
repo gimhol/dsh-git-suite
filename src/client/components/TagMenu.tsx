@@ -1,6 +1,7 @@
 import type * as React from 'react'
 import { h, useEffect, useRef } from '../runtime.js'
 import type { Selection, Translate } from '../types.js'
+import { cls } from '../styles.js'
 
 export type TagSelection = Extract<Selection, { kind: 'tag' }>
 
@@ -50,7 +51,7 @@ export function TagMenu({ context, t, onCheckout, onEdit, onPush, onFetchTag, on
   return (
     <div
       ref={menuRef}
-      className="dsh-gitlog-commit-menu"
+      className={cls('dsh-gitlog-commit-menu')}
       style={{ left, top }}
       role="menu"
       aria-label={t('tagMenu')}

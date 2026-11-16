@@ -1,5 +1,6 @@
 import type * as React from 'react'
 import { h, useEffect } from '../runtime.js'
+import { cls } from '../styles.js'
 
 export interface TooltipAnchorRect {
   left: number
@@ -65,9 +66,9 @@ function cancelRemoval(): void {
 function ensureElement(): HTMLDivElement {
   if (element !== null) return element
   // Drop leftovers from an earlier plugin instance (hot reload, remount).
-  for (const stale of Array.from(document.querySelectorAll('.dsh-gitlog-tooltip'))) stale.remove()
+  for (const stale of Array.from(document.querySelectorAll(`.${cls('dsh-gitlog-tooltip')}`))) stale.remove()
   const node = document.createElement('div')
-  node.className = 'dsh-gitlog-tooltip'
+  node.className = cls('dsh-gitlog-tooltip')
   node.setAttribute('role', 'tooltip')
   node.style.display = 'none'
   document.body.appendChild(node)
@@ -97,7 +98,7 @@ function applyPlacement(text: string, anchor: TooltipAnchor): void {
   const above = target.bottom + 64 > root.bottom
 
   node.textContent = text
-  node.classList.remove('is-hiding')
+  node.classList.remove(cls('is-hiding'))
   node.style.display = ''
   node.style.visibility = 'hidden'
   node.style.maxWidth = `${MAX_WIDTH}px`
@@ -139,7 +140,7 @@ function applyPlacement(text: string, anchor: TooltipAnchor): void {
 /** Show `text` near the anchor after the shared hover delay. */
 export function showTooltip(text: string, anchor: TooltipAnchor): void {
   clearTimer()
-  if (current !== null && element !== null) element.classList.add('is-hiding')
+  if (current !== null && element !== null) element.classList.add(cls('is-hiding'))
   timer = window.setTimeout(() => {
     timer = null
     applyPlacement(text.trim(), anchor)
@@ -160,14 +161,14 @@ export function hideTooltip(): void {
     return
   }
   cancelRemoval()
-  element.classList.add('is-hiding')
+  element.classList.add(cls('is-hiding'))
   removal = window.setTimeout(() => {
     removal = null
     current = null
     if (element !== null) {
       element.style.display = 'none'
       element.textContent = ''
-      element.classList.remove('is-hiding')
+      element.classList.remove(cls('is-hiding'))
     }
   }, FADE_OUT_MS)
 }

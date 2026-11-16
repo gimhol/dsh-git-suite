@@ -5,6 +5,7 @@ import { requestSync, toApiError } from '../lib/api.js'
 import type { Translate } from '../types.js'
 import { Button, DialogActions } from './Button.js'
 import { DialogShell } from './DialogShell.js'
+import { cls } from '../styles.js'
 
 export interface ForcePushTagDialogProps {
   view: GitLogView
@@ -43,10 +44,10 @@ export function ForcePushTagDialog({ view, tag, remote, t, onPushed, onClose }: 
 
   return (
     <DialogShell title={t('forcePushTagTitle')} t={t} onClose={onClose}>
-      <p className="dsh-gitlog-warning" role="alert">
+      <p className={cls('dsh-gitlog-warning')} role="alert">
         {t('forcePushTagConfirm').replace('{tag}', tag).replace('{remote}', remote)}
       </p>
-      {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
+      {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
       <DialogActions>
         <Button onClick={onClose}>{t('cancel')}</Button>
         <Button variant="danger" disabled={busy} onClick={() => { void confirm() }}>

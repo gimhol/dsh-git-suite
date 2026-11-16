@@ -5,6 +5,7 @@ import { requestBranch, toApiError } from '../lib/api.js'
 import type { Translate } from '../types.js'
 import { DialogShell } from './DialogShell.js'
 import { Button, DialogActions } from './Button.js'
+import { cls } from '../styles.js'
 
 export interface AddBranchDialogProps {
   view: GitLogView
@@ -47,8 +48,8 @@ export function AddBranchDialog({ view, t, onClose }: AddBranchDialogProps): Rea
 
   return (
     <DialogShell title={t('branchDialogTitle')} t={t} onClose={onClose}>
-      <div className="dsh-gitlog-repo-form">
-        <label className="dsh-gitlog-field">
+      <div className={cls('dsh-gitlog-repo-form')}>
+        <label className={cls('dsh-gitlog-field')}>
           <span>{t('branchName')}</span>
           <input
             type="text"
@@ -65,7 +66,7 @@ export function AddBranchDialog({ view, t, onClose }: AddBranchDialogProps): Rea
             autoFocus
           />
         </label>
-        <label className="dsh-gitlog-field">
+        <label className={cls('dsh-gitlog-field')}>
           <span>{t('branchBase')}</span>
           <input
             type="text"
@@ -81,9 +82,9 @@ export function AddBranchDialog({ view, t, onClose }: AddBranchDialogProps): Rea
             autoComplete="off"
           />
         </label>
-        <p className="dsh-gitlog-settings-hint">{t('branchBaseHint')}</p>
-        {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
-        <DialogActions className="dsh-gitlog-settings-actions">
+        <p className={cls('dsh-gitlog-settings-hint')}>{t('branchBaseHint')}</p>
+        {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
+        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
           <Button onClick={onClose}>{t('cancel')}</Button>
           <Button type="button" variant="primary" disabled={busy} onClick={() => { void create() }}>
             {busy ? t('branchSaving') : t('branchCreate')}

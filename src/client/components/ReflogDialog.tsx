@@ -6,6 +6,7 @@ import { formatDateTime } from '../lib/format.js'
 import type { ReflogEntry, Translate } from '../types.js'
 import { Button, DialogActions } from './Button.js'
 import { DialogShell } from './DialogShell.js'
+import { cls } from '../styles.js'
 
 export interface ReflogDialogProps {
   view: GitLogView
@@ -76,23 +77,23 @@ export function ReflogDialog({ view, t, onDone, onClose }: ReflogDialogProps): R
 
   return (
     <DialogShell title={t('reflogTitle')} t={t} wide={true} onClose={onClose}>
-      <p className="dsh-gitlog-settings-hint">{t('reflogHint')}</p>
+      <p className={cls('dsh-gitlog-settings-hint')}>{t('reflogHint')}</p>
       {entries === null
-        ? <p className="dsh-gitlog-note">{t('reflogLoading')}</p>
+        ? <p className={cls('dsh-gitlog-note')}>{t('reflogLoading')}</p>
         : entries.length === 0
-          ? <p className="dsh-gitlog-note">{t('reflogEmpty')}</p>
+          ? <p className={cls('dsh-gitlog-note')}>{t('reflogEmpty')}</p>
           : (
-              <ul className="dsh-gitlog-reflog-list">
+              <ul className={cls('dsh-gitlog-reflog-list')}>
                 {entries.map(entry => (
                   <li key={`${entry.selector}:${entry.hash}`}>
                     <button
                       type="button"
-                      className={`dsh-gitlog-reflog-row${selected?.selector === entry.selector && selected.hash === entry.hash ? ' is-selected' : ''}`}
+                      className={cls(`dsh-gitlog-reflog-row${selected?.selector === entry.selector && selected.hash === entry.hash ? ' is-selected' : ''}`)}
                       onClick={() => select(entry)}
                     >
-                      <code className="dsh-gitlog-reflog-hash">{entry.shortHash}</code>
-                      <span className="dsh-gitlog-reflog-action">{entry.action}</span>
-                      <span className="dsh-gitlog-reflog-meta">
+                      <code className={cls('dsh-gitlog-reflog-hash')}>{entry.shortHash}</code>
+                      <span className={cls('dsh-gitlog-reflog-action')}>{entry.action}</span>
+                      <span className={cls('dsh-gitlog-reflog-meta')}>
                         {`${entry.author} · ${formatDateTime(entry.date, t('localeId'))}`}
                       </span>
                     </button>
@@ -103,8 +104,8 @@ export function ReflogDialog({ view, t, onDone, onClose }: ReflogDialogProps): R
       {selected === null
         ? null
         : (
-            <div className="dsh-gitlog-reflog-actions">
-              <label className="dsh-gitlog-field">
+            <div className={cls('dsh-gitlog-reflog-actions')}>
+              <label className={cls('dsh-gitlog-field')}>
                 <span>{t('reflogBranchLabel')}</span>
                 <input
                   type="text"
@@ -114,11 +115,11 @@ export function ReflogDialog({ view, t, onDone, onClose }: ReflogDialogProps): R
                   autoComplete="off"
                 />
               </label>
-              <div className="dsh-gitlog-reflog-buttons">
+              <div className={cls('dsh-gitlog-reflog-buttons')}>
                 <Button variant="primary" disabled={busy || branchName.trim() === ''} onClick={() => { void createBranch() }}>
                   {t('reflogCreateBranch')}
                 </Button>
-                <label className="dsh-gitlog-check">
+                <label className={cls('dsh-gitlog-check')}>
                   <input
                     type="checkbox"
                     checked={resetConfirmed}
@@ -132,7 +133,7 @@ export function ReflogDialog({ view, t, onDone, onClose }: ReflogDialogProps): R
               </div>
             </div>
           )}
-      {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
+      {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
       <DialogActions>
         <Button onClick={onClose}>{t('close')}</Button>
       </DialogActions>

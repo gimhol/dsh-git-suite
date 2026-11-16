@@ -1,6 +1,7 @@
 import type * as React from 'react'
 import { h, useMemo } from '../runtime.js'
 import { highlightLines, languageForAlias } from '../lib/highlight.js'
+import { cls } from '../styles.js'
 
 export interface MarkdownProps {
   text: string
@@ -222,15 +223,15 @@ function CodeBlock({ block }: { block: Extract<Block, { kind: 'code' }> }): Reac
     [block.code, language, lines],
   )
   return (
-    <pre className="dsh-gitlog-md-code">
+    <pre className={cls('dsh-gitlog-md-code')}>
       <code>
         {highlighted === null
           ? block.code
           : highlighted.map((line, lineIndex) => (
-              <span key={lineIndex} className="dsh-gitlog-md-code-line">
+              <span key={lineIndex} className={cls('dsh-gitlog-md-code-line')}>
                 {line.map((token, tokenIndex) => token.type === null
                   ? token.text
-                  : <span key={tokenIndex} className={`dsh-gitlog-tok-${token.type}`}>{token.text}</span>)}
+                  : <span key={tokenIndex} className={cls(`dsh-gitlog-tok-${token.type}`)}>{token.text}</span>)}
                 {lineIndex < highlighted.length - 1 ? '\n' : ''}
               </span>
             ))}
@@ -242,7 +243,7 @@ function CodeBlock({ block }: { block: Extract<Block, { kind: 'code' }> }): Reac
 function renderBlock(block: Block, key: string): React.ReactNode {
   if (block.kind === 'heading') {
     return (
-      <h3 key={key} className={`dsh-gitlog-md-heading md-level-${block.level}`}>
+      <h3 key={key} className={cls(`dsh-gitlog-md-heading md-level-${block.level}`)}>
         {inline(block.text, key)}
       </h3>
     )
@@ -279,7 +280,7 @@ function renderBlock(block: Block, key: string): React.ReactNode {
 export function Markdown({ text, className }: MarkdownProps): React.ReactElement {
   const tooLarge = text.length > MAX_MARKDOWN_CHARS
   const blocks = useMemo(() => tooLarge ? [] : parseBlocks(text), [text, tooLarge])
-  const classes = `dsh-gitlog-markdown${className === undefined ? '' : ` ${className}`}`
+  const classes = cls(`dsh-gitlog-markdown${className === undefined ? '' : ` ${className}`}`)
   if (tooLarge) return <pre className={classes}>{text}</pre>
   return (
     <div className={classes}>

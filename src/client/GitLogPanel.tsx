@@ -6,6 +6,7 @@ import { AddBranchDialog } from './components/AddBranchDialog.js'
 import { EditRemoteDialog } from './components/EditRemoteDialog.js'
 import { BranchMenu, type BranchMenuState } from './components/BranchMenu.js'
 import { BranchDeleteDialog, BranchRenameDialog } from './components/BranchDialogs.js'
+import { UpstreamDialog } from './components/UpstreamDialog.js'
 import { DeleteRemoteDialog } from './components/DeleteRemoteDialog.js'
 import { DetailPane } from './components/DetailPane.js'
 import { ErrorState } from './components/ErrorState.js'
@@ -15,6 +16,7 @@ import { RefsTree } from './components/RefsTree.js'
 import { RemoteMenu, type RemoteMenuState } from './components/RemoteMenu.js'
 import { RemoteBranchMenu, type RemoteBranchMenuState, type RemoteBranchSelection } from './components/RemoteBranchMenu.js'
 import { DeleteRemoteBranchDialog } from './components/DeleteRemoteBranchDialog.js'
+import { TrackBranchDialog, type TrackBranchPrompt } from './components/TrackBranchDialog.js'
 import { TagMenu, type TagMenuState, type TagSelection } from './components/TagMenu.js'
 import { EditTagDialog } from './components/EditTagDialog.js'
 import { AddTagDialog } from './components/AddTagDialog.js'
@@ -43,7 +45,7 @@ import { requestBranchAction, requestCheckout, requestCommitOp, requestOperation
 import { hasForge } from './lib/forge.js'
 import { readRepoUiState, setActiveRepo, writeRepoUiState, type ViewMode } from './lib/ui-state.js'
 import { h, useEffect, useRef, useState } from './runtime.js'
-import { CSS } from './styles.js'
+import { cls, CSS } from './styles.js'
 import type { Branch, Commit, OperationPayload, Selection, TagStatusPayload, Translate } from './types.js'
 
 export interface GitLogPanelProps {
@@ -120,11 +122,13 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
   const [remoteEdit, setRemoteEdit] = useState<string | null>(null)
   const [remoteBranchMenu, setRemoteBranchMenu] = useState<RemoteBranchMenuState | null>(null)
   const [remoteBranchDelete, setRemoteBranchDelete] = useState<{ remote: string; branch: string } | null>(null)
+  const [trackPrompt, setTrackPrompt] = useState<TrackBranchPrompt | null>(null)
   const [addRemoteOpen, setAddRemoteOpen] = useState(false)
   const [addBranchOpen, setAddBranchOpen] = useState(false)
   const [branchMenu, setBranchMenu] = useState<BranchMenuState | null>(null)
   const [rebaseTarget, setRebaseTarget] = useState<string | null>(null)
   const [branchDialog, setBranchDialog] = useState<{ action: 'rename' | 'delete'; branch: Branch } | null>(null)
+  const [upstreamEdit, setUpstreamEdit] = useState<Branch | null>(null)
   const [branchActionError, setBranchActionError] = useState<string | null>(null)
   const [tagMenu, setTagMenu] = useState<TagMenuState | null>(null)
   const [stashMenu, setStashMenu] = useState<StashMenuState | null>(null)
@@ -548,6 +552,22 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
   }
 
   /** Right-click actions on a remote-tracking branch such as `origin/main`. */
+  /** Refresh both halves after a checkout, following the new HEAD. */
+  const afterCheckout = (): void => {
+    ws.refresh()
+    if (view.selection.kind === 'all') {
+      view.refresh()
+    } else {
+      view.selectRef({ kind: 'head' })
+      view.refresh()
+    }
+  }
+
+  /**
+   * Checking out a remote branch creates (or switches to) its local namesake.
+   * When that name is already an unrelated branch, the host answers
+   * `local-branch-exists` with a free name and the user confirms one here.
+   */
   const checkoutRemoteBranch = async (branch: RemoteBranchSelection): Promise<void> => {
     setBranchActionError(null)
     try {
@@ -556,15 +576,23 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
         path: view.repo?.repoRoot ?? view.pathInput.trim(),
         branch: branch.name,
       })
-      ws.refresh()
-      if (view.selection.kind === 'all') {
-        view.refresh()
-      } else {
-        view.selectRef({ kind: 'head' })
-        view.refresh()
-      }
+      afterCheckout()
     } catch (error) {
-      setBranchActionError(toApiError(error).message)
+      const failure = toApiError(error)
+      const details = failure.details
+      const local = typeof details?.local === 'string' ? details.local : ''
+      const suggested = typeof details?.suggested === 'string' ? details.suggested : ''
+      if (failure.code === 'local-branch-exists' && local !== '' && suggested !== '') {
+        setTrackPrompt({
+          path: view.repo?.repoRoot ?? view.pathInput.trim(),
+          remoteRef: branch.name,
+          local,
+          upstream: typeof details?.upstream === 'string' ? details.upstream : '',
+          suggested,
+        })
+        return
+      }
+      setBranchActionError(failure.message)
     }
   }
 
@@ -640,7 +668,7 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
   }
 
   const body = (
-    <div ref={bodyRef} className={treeVisible ? 'dsh-gitlog-body has-tree' : 'dsh-gitlog-body'} style={bodyStyle}>
+    <div ref={bodyRef} className={cls(treeVisible ? 'dsh-gitlog-body has-tree' : 'dsh-gitlog-body')} style={bodyStyle}>
       {treeVisible
         ? (
             <RefsTree
@@ -688,7 +716,7 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
       />
           )
         : null}
-      <div ref={stackRef} className="dsh-gitlog-stack">
+      <div ref={stackRef} className={cls('dsh-gitlog-stack')}>
         {viewMode === 'pulls'
           ? <PullsPane key={repoRoot} view={pulls} t={t} narrow={compact || narrow} repoKey={repoRoot} />
           : viewMode === 'workspace'
@@ -705,7 +733,7 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
               )
             : hasCommits
               ? <CommitList view={view} t={t} onContextMenu={openCommitMenu} onRefContextMenu={openRefMenu} />
-              : <div className="dsh-gitlog-state-pane">{state}</div>}
+              : <div className={cls('dsh-gitlog-state-pane')}>{state}</div>}
         {viewMode === 'history' && hasCommits
           ? (
               <Splitter
@@ -719,7 +747,7 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
           : null}
         {viewMode === 'history' && hasCommits
           ? (
-              <aside className="dsh-gitlog-detail" style={detailStyle} aria-label={t('details')}>
+              <aside className={cls('dsh-gitlog-detail')} style={detailStyle} aria-label={t('details')}>
                 <DetailPane
                   detail={detail}
                   status={detailStatus}
@@ -734,13 +762,13 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
   )
 
   return (
-    <div className="dsh-gitlog">
+    <div className={cls('dsh-gitlog')}>
       <style>{CSS}</style>
       <ToastHost />
       <TooltipHost />
-      <div className="dsh-gitlog-topbar">
+      <div className={cls('dsh-gitlog-topbar')}>
         <PanelControls view={view} t={t} />
-        <div className="dsh-gitlog-header-actions">
+        <div className={cls('dsh-gitlog-header-actions')}>
           {viewMode === 'pulls'
             ? null
             : (
@@ -781,13 +809,13 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
               onAbort={() => { void conflictAction('abort') }}
             />
           )}
-      {view.scanNote !== null ? <p className="dsh-gitlog-note">{view.scanNote}</p> : null}
-      {branchActionError !== null ? <p className="dsh-gitlog-note" role="alert">{branchActionError}</p> : null}
-      {tagActionError !== null ? <p className="dsh-gitlog-note" role="alert">{tagActionError}</p> : null}
-      {view.switching ? <p className="dsh-gitlog-note" role="status">{t('switching')}</p> : null}
-      {view.switchError !== null ? <p className="dsh-gitlog-note" role="alert">{view.switchError}</p> : null}
+      {view.scanNote !== null ? <p className={cls('dsh-gitlog-note')}>{view.scanNote}</p> : null}
+      {branchActionError !== null ? <p className={cls('dsh-gitlog-note')} role="alert">{branchActionError}</p> : null}
+      {tagActionError !== null ? <p className={cls('dsh-gitlog-note')} role="alert">{tagActionError}</p> : null}
+      {view.switching ? <p className={cls('dsh-gitlog-note')} role="status">{t('switching')}</p> : null}
+      {view.switchError !== null ? <p className={cls('dsh-gitlog-note')} role="alert">{view.switchError}</p> : null}
       {error !== null && commits.length > 0
-        ? <p className="dsh-gitlog-note" role="status">{`${t('errorTitle')} · ${error.message}`}</p>
+        ? <p className={cls('dsh-gitlog-note')} role="status">{`${t('errorTitle')} · ${error.message}`}</p>
         : null}
       {body}
       {settingsOpen
@@ -933,6 +961,16 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
               onClose={() => setRemoteBranchDelete(null)}
             />
           )}
+      {trackPrompt === null
+        ? null
+        : (
+            <TrackBranchDialog
+              prompt={trackPrompt}
+              t={t}
+              onClose={() => setTrackPrompt(null)}
+              onDone={() => { setTrackPrompt(null); afterCheckout() }}
+            />
+          )}
       {remoteDelete === null
         ? null
         : (
@@ -970,10 +1008,24 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
         onFetch={fetchBranch}
         onPull={pullBranch}
         onPush={pushBranch}
+        onUpstream={branch => setUpstreamEdit(branch)}
         onRename={branch => setBranchDialog({ action: 'rename', branch })}
         onDelete={branch => setBranchDialog({ action: 'delete', branch })}
         onClose={() => setBranchMenu(null)}
       />
+      {upstreamEdit === null
+        ? null
+        : (
+            <UpstreamDialog
+              view={view}
+              branch={upstreamEdit}
+              t={t}
+              onClose={() => {
+                setUpstreamEdit(null)
+                ws.refresh()
+              }}
+            />
+          )}
       {branchDialog === null
         ? null
         : branchDialog.action === 'rename'

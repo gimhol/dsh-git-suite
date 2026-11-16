@@ -4,6 +4,7 @@ import { isContentLine, pairDiffLines, parseDiff, patchLinesForRows } from '../l
 import { highlightLines, languageForPath, type HighlightToken } from '../lib/highlight.js'
 import type { DiffLine } from '../lib/diff.js'
 import type { Translate } from '../types.js'
+import { cls } from '../styles.js'
 
 export type DiffMode = 'unified' | 'split'
 
@@ -51,16 +52,16 @@ const EDGE = 24
 function DiffCode({ line, tokens }: { line: DiffLine; tokens: HighlightToken[] | null }): React.ReactElement {
   const content = line.kind === 'add' || line.kind === 'del' || line.kind === 'context'
   if (!content) {
-    return <span className="dsh-gitlog-diff-code">{line.raw === '' ? ' ' : line.raw}</span>
+    return <span className={cls('dsh-gitlog-diff-code')}>{line.raw === '' ? ' ' : line.raw}</span>
   }
   return (
-    <span className="dsh-gitlog-diff-code">
-      <span className="dsh-gitlog-diff-marker">{line.raw.slice(0, 1)}</span>
+    <span className={cls('dsh-gitlog-diff-code')}>
+      <span className={cls('dsh-gitlog-diff-marker')}>{line.raw.slice(0, 1)}</span>
       {tokens === null
         ? line.content
         : tokens.map((token, index) => token.type === null
           ? token.text
-          : <span key={index} className={`dsh-gitlog-tok-${token.type}`}>{token.text}</span>)}
+          : <span key={index} className={cls(`dsh-gitlog-tok-${token.type}`)}>{token.text}</span>)}
     </span>
   )
 }
@@ -176,7 +177,7 @@ export function DiffView({
   }, [lineRange?.start, lineRange?.end])
 
   if (parsed.lines.length === 0) {
-    return <p className="dsh-gitlog-note">{empty ?? t('fileNoPatch')}</p>
+    return <p className={cls('dsh-gitlog-note')}>{empty ?? t('fileNoPatch')}</p>
   }
 
   const totalRows = splitRows === null ? parsed.lines.length : splitRows.length
@@ -195,7 +196,7 @@ export function DiffView({
     : (
         <button
           type="button"
-          className="dsh-gitlog-diff-hunk-action"
+          className={cls('dsh-gitlog-diff-hunk-action')}
           disabled={hunkAction.busy === true}
           onClick={() => hunkAction.onAction(hunk)}
         >
@@ -232,15 +233,15 @@ export function DiffView({
       <div
         key={row}
         data-diff-row={row}
-        className={`dsh-gitlog-diff-line is-${line.kind}${selected ? ' is-selected' : ''}`}
+        className={cls(`dsh-gitlog-diff-line is-${line.kind}${selected ? ' is-selected' : ''}`)}
         onContextMenu={selectable ? openMenu(row) : undefined}
       >
         <span
-          className="dsh-gitlog-diff-gutter"
+          className={cls('dsh-gitlog-diff-gutter')}
           onPointerDown={selectable ? startSelect(row) : undefined}
         >
-          <span className="dsh-gitlog-diff-num">{line.oldLine ?? ''}</span>
-          <span className="dsh-gitlog-diff-num">{line.newLine ?? ''}</span>
+          <span className={cls('dsh-gitlog-diff-num')}>{line.oldLine ?? ''}</span>
+          <span className={cls('dsh-gitlog-diff-num')}>{line.newLine ?? ''}</span>
         </span>
         <DiffCode line={line} tokens={line.kind === 'del' ? tokensOf(line, 'old') : tokensOf(line, 'new')} />
         {line.kind === 'hunk' ? hunkButton(line.hunk) : null}
@@ -249,18 +250,18 @@ export function DiffView({
   }
 
   const splitCell = (line: DiffLine | null, side: 'left' | 'right'): React.ReactElement => (
-    <div className={`dsh-gitlog-diff-cell${line === null ? ' is-empty' : ` is-${line.kind}`}`}>
-      <span className="dsh-gitlog-diff-num">
+    <div className={cls(`dsh-gitlog-diff-cell${line === null ? ' is-empty' : ` is-${line.kind}`}`)}>
+      <span className={cls('dsh-gitlog-diff-num')}>
         {line === null ? '' : side === 'left' ? line.oldLine ?? '' : line.newLine ?? ''}
       </span>
-      {line === null ? <span className="dsh-gitlog-diff-code" /> : <DiffCode line={line} tokens={tokensOf(line, side === 'left' ? 'old' : 'new')} />}
+      {line === null ? <span className={cls('dsh-gitlog-diff-code')} /> : <DiffCode line={line} tokens={tokensOf(line, side === 'left' ? 'old' : 'new')} />}
     </div>
   )
 
   return (
     <div
       ref={containerRef}
-      className={`dsh-gitlog-diff${unified ? '' : ' is-split'}${className === undefined ? '' : ` ${className}`}`}
+      className={cls(`dsh-gitlog-diff${unified ? '' : ' is-split'}${className === undefined ? '' : ` ${className}`}`)}
       role="region"
       aria-label={t('patch')}
       tabIndex={0}
@@ -269,8 +270,8 @@ export function DiffView({
         // selection: right-click must keep it, so the menu can act on it.
         if (event.button !== 0) return
         const target = event.target as HTMLElement | null
-        if (target !== null && target.closest('.dsh-gitlog-diff-gutter') !== null) return
-        if (target !== null && target.closest('.dsh-gitlog-diff-split-row') !== null) return
+        if (target !== null && target.closest(`.${cls('dsh-gitlog-diff-gutter')}`) !== null) return
+        if (target !== null && target.closest(`.${cls('dsh-gitlog-diff-split-row')}`) !== null) return
         setAnchor(null)
         setHead(null)
       }}
@@ -298,7 +299,7 @@ export function DiffView({
                 <div
                   key={index}
                   data-diff-row={index}
-                  className={`dsh-gitlog-diff-line is-${row.full.kind}`}
+                  className={cls(`dsh-gitlog-diff-line is-${row.full.kind}`)}
                 >
                   <DiffCode line={row.full} tokens={null} />
                   {row.full.kind === 'hunk' ? hunkButton(row.full.hunk) : null}
@@ -309,7 +310,7 @@ export function DiffView({
               <div
                 key={index}
                 data-diff-row={index}
-                className={`dsh-gitlog-diff-split-row${selected ? ' is-selected' : ''}`}
+                className={cls(`dsh-gitlog-diff-split-row${selected ? ' is-selected' : ''}`)}
                 onPointerDown={startSelect(index)}
                 onContextMenu={openMenu(index)}
               >
@@ -322,7 +323,7 @@ export function DiffView({
         ? (
             <button
               type="button"
-              className="dsh-gitlog-diff-more"
+              className={cls('dsh-gitlog-diff-more')}
               onClick={() => setLimit(value => value + pageSize)}
             >
               {t('diffMore').replace('{count}', String(remaining))}

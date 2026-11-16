@@ -1,6 +1,7 @@
 import type * as React from 'react'
 import { h, useEffect, useRef } from '../runtime.js'
 import type { Translate } from '../types.js'
+import { cls } from '../styles.js'
 
 export interface RemoteMenuState {
   remote: string
@@ -53,7 +54,7 @@ export function RemoteMenu({ context, t, onFetch, onPull, onPush, onEdit, onDele
   return (
     <div
       ref={menuRef}
-      className="dsh-gitlog-commit-menu dsh-gitlog-remote-menu"
+      className={cls('dsh-gitlog-commit-menu dsh-gitlog-remote-menu')}
       style={{ left, top }}
       role="menu"
       aria-label={t('remoteMenu')}

@@ -5,6 +5,7 @@ import type { Translate } from '../types.js'
 import { Button, DialogActions } from './Button.js'
 import { DialogShell } from './DialogShell.js'
 import { Dropdown } from './Dropdown.js'
+import { cls } from '../styles.js'
 
 export interface CreatePullDialogProps {
   view: PullsView
@@ -54,14 +55,14 @@ export function CreatePullDialog({ view, t, onClose }: CreatePullDialogProps): R
 
   return (
     <DialogShell title={t('pullCreateTitle')} t={t} onClose={onClose}>
-      <div className="dsh-gitlog-pull-create">
-        <div className="dsh-gitlog-pull-create-branches">
-          <span className="dsh-gitlog-field">
+      <div className={cls('dsh-gitlog-pull-create')}>
+        <div className={cls('dsh-gitlog-pull-create-branches')}>
+          <span className={cls('dsh-gitlog-field')}>
             <span>{t('pullCreateHead')}</span>
-            <code className="dsh-gitlog-pull-create-head">{view.headBranch === '' ? '—' : view.headBranch}</code>
+            <code className={cls('dsh-gitlog-pull-create-head')}>{view.headBranch === '' ? '—' : view.headBranch}</code>
           </span>
           <Dropdown
-            className="dsh-gitlog-field grow"
+            className={cls('dsh-gitlog-field grow')}
             value={base}
             options={branches.map(name => ({ value: name, label: name, title: name }))}
             onChange={setBase}
@@ -72,7 +73,7 @@ export function CreatePullDialog({ view, t, onClose }: CreatePullDialogProps): R
             noMatchesLabel={t('noMatches')}
           />
         </div>
-        <label className="dsh-gitlog-field">
+        <label className={cls('dsh-gitlog-field')}>
           <span>{t('pullCreateTitleLabel')}</span>
           <input
             type="text"
@@ -84,30 +85,30 @@ export function CreatePullDialog({ view, t, onClose }: CreatePullDialogProps): R
             autoFocus
           />
         </label>
-        <label className="dsh-gitlog-field">
+        <label className={cls('dsh-gitlog-field')}>
           <span>{t('pullCreateBody')}</span>
           <textarea
-            className="dsh-gitlog-pull-create-body"
+            className={cls('dsh-gitlog-pull-create-body')}
             value={body}
             onChange={event => setBody(event.target.value)}
             placeholder={t('pullCreateBodyPlaceholder')}
             spellCheck={false}
           />
         </label>
-        <label className="dsh-gitlog-check">
+        <label className={cls('dsh-gitlog-check')}>
           <input type="checkbox" checked={draft} onChange={event => setDraft(event.target.checked)} />
           {t('pullCreateDraft')}
         </label>
-        <p className="dsh-gitlog-field-hint">{t('pullCreateHint')}</p>
+        <p className={cls('dsh-gitlog-field-hint')}>{t('pullCreateHint')}</p>
         {view.headRemote !== '' && view.headRemote !== view.remote
           ? (
-              <p className="dsh-gitlog-field-hint">
+              <p className={cls('dsh-gitlog-field-hint')}>
                 {t('pullCreateCrossRepo').replace('{head}', view.headRemote).replace('{base}', view.remote)}
               </p>
             )
           : null}
       </div>
-      {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
+      {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
       <DialogActions>
         <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
         <Button variant="primary" disabled={busy || base === ''} onClick={() => { void submit() }}>

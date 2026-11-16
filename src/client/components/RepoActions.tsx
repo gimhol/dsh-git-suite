@@ -14,6 +14,7 @@ import { FetchDialog } from './FetchDialog.js'
 import { PushDialog } from './PushDialog.js'
 import { SyncDialog } from './SyncDialog.js'
 import { toast } from './Toast.js'
+import { cls } from '../styles.js'
 
 /** `exit 3221225477` / `spawn ENOENT`, the diagnostic a failed launch reports. */
 function launchDetail(details: ErrorDetails | undefined): string {
@@ -110,7 +111,7 @@ export function RepoActions({ view, ws, mode, onModeChange, t }: RepoActionsProp
   if (forgeAvailable) modes.push({ value: 'pulls', label: t('pulls') })
 
   return (
-    <div className="dsh-gitlog-repo-actions">
+    <div className={cls('dsh-gitlog-repo-actions')}>
       <Switch
         value={mode}
         ariaLabel={t('viewMode')}
@@ -168,8 +169,8 @@ export function RepoActions({ view, ws, mode, onModeChange, t }: RepoActionsProp
           onClick={() => { void openEditor(editor) }}
         />
       ))}
-      {ws.syncNote !== null ? <p className="dsh-gitlog-note" role="status">{ws.syncNote}</p> : null}
-      {ws.syncError !== null ? <p className="dsh-gitlog-note" role="alert">{ws.syncError.message}</p> : null}
+      {ws.syncNote !== null ? <p className={cls('dsh-gitlog-note')} role="status">{ws.syncNote}</p> : null}
+      {ws.syncError !== null ? <p className={cls('dsh-gitlog-note')} role="alert">{ws.syncError.message}</p> : null}
       {pullOpen
         ? (
             <SyncDialog

@@ -1,6 +1,7 @@
 import type * as React from 'react'
 import { h } from '../runtime.js'
 import type { PullApproval, Translate } from '../types.js'
+import { cls } from '../styles.js'
 
 export interface PullApprovalBadgesProps {
   approval: PullApproval
@@ -23,15 +24,15 @@ function tone(state: PullApproval['review']): string {
 /** Gitee's separate review and test gates, shown in the detail header. */
 export function PullApprovalBadges({ approval, t }: PullApprovalBadgesProps): React.ReactElement {
   return (
-    <span className="dsh-gitlog-pull-approval">
+    <span className={cls('dsh-gitlog-pull-approval')}>
       <span
-        className={`dsh-gitlog-pull-approval-item is-${tone(approval.review)}`}
+        className={cls(`dsh-gitlog-pull-approval-item is-${tone(approval.review)}`)}
         title={`${String(approval.reviewers)} ${t('pullApprovalReview')}`}
       >
         {`${t('pullApprovalReview')}: ${label(approval.review, t)}`}
       </span>
       <span
-        className={`dsh-gitlog-pull-approval-item is-${tone(approval.test)}`}
+        className={cls(`dsh-gitlog-pull-approval-item is-${tone(approval.test)}`)}
         title={`${String(approval.testers)} ${t('pullApprovalTest')}`}
       >
         {`${t('pullApprovalTest')}: ${label(approval.test, t)}`}

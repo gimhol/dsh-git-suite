@@ -782,6 +782,8 @@ export interface BranchActionRequest {
   branch?: string
   remote?: string
   newName?: string
+  /** `upstream` only: the remote-tracking ref to follow, or empty to stop tracking. */
+  upstream?: string
   /** ebase-onto only: any commit, tag, or branch to rebase onto. */
   target?: string
   /** Delete only: force deletion even when the branch is not fully merged. */

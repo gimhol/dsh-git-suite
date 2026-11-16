@@ -1,6 +1,7 @@
 import type * as React from 'react'
 import { h, useEffect, useRef, useState } from '../runtime.js'
 import type { Translate } from '../types.js'
+import { cls } from '../styles.js'
 
 /** One spinner revolution; the CSS animation uses the same duration. */
 export const SPIN_MS = 900
@@ -59,7 +60,7 @@ export function Spinner({ size = 16, active = true }: { size?: number; active?: 
   if (!mounted) return null
   return (
     <svg
-      className={`dsh-gitlog-spinner${active ? '' : ' is-hiding'}`}
+      className={cls(`dsh-gitlog-spinner${active ? '' : ' is-hiding'}`)}
       width={size}
       height={size}
       viewBox="0 0 24 24"
@@ -80,7 +81,7 @@ export function Spinner({ size = 16, active = true }: { size?: number; active?: 
 
 export function LoadingState({ label }: { label: string }): React.ReactElement {
   return (
-    <div className="dsh-gitlog-state">
+    <div className={cls('dsh-gitlog-state')}>
       <Spinner size={18} />
       <p>{label}</p>
     </div>
@@ -89,7 +90,7 @@ export function LoadingState({ label }: { label: string }): React.ReactElement {
 
 export function LoadingLine({ label, active = true }: { label: string; active?: boolean }): React.ReactElement {
   return (
-    <div className="dsh-gitlog-loading-line">
+    <div className={cls('dsh-gitlog-loading-line')}>
       <Spinner size={18} active={active} />
       {active ? <span>{label}</span> : null}
     </div>
@@ -98,10 +99,10 @@ export function LoadingLine({ label, active = true }: { label: string; active?: 
 
 export function EmptyState({ t, onRefresh }: { t: Translate; onRefresh(): void }): React.ReactElement {
   return (
-    <div className="dsh-gitlog-state">
+    <div className={cls('dsh-gitlog-state')}>
       <h2>{t('noCommits')}</h2>
       <p>{t('noCommitsHint')}</p>
-      <button type="button" className="dsh-gitlog-btn" onClick={onRefresh}>{t('refresh')}</button>
+      <button type="button" className={cls('dsh-gitlog-btn')} onClick={onRefresh}>{t('refresh')}</button>
     </div>
   )
 }

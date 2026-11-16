@@ -5,6 +5,7 @@ import { requestCommitOp, toApiError } from '../lib/api.js'
 import type { Translate } from '../types.js'
 import { Button, DialogActions } from './Button.js'
 import { DialogShell } from './DialogShell.js'
+import { cls } from '../styles.js'
 
 export interface OperationConflictDialogProps {
   view: GitLogView
@@ -47,11 +48,11 @@ export function OperationConflictDialog({
 
   return (
     <DialogShell title={t('conflictTitle')} t={t} onClose={onClose}>
-      <p className="dsh-gitlog-warning" role="alert">
+      <p className={cls('dsh-gitlog-warning')} role="alert">
         {t('conflictBody').replace('{operation}', operation)}
       </p>
-      <div className="dsh-gitlog-note" style={{ whiteSpace: 'pre-wrap' }}>{message}</div>
-      {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
+      <div className={cls('dsh-gitlog-note')} style={{ whiteSpace: 'pre-wrap' }}>{message}</div>
+      {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
       <DialogActions>
         <Button onClick={onClose}>{t('close')}</Button>
         <Button variant="danger" disabled={busy} onClick={() => { void abort() }}>

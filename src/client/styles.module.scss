@@ -2156,7 +2156,9 @@ $brand: var(--dsw-alias-brand-primary);
 
   &-settings {
     box-sizing: border-box;
-    width: min(380px, 100%);
+    // Wide enough that a shortcut row keeps its label, keycaps, and actions on
+    // one line instead of wrapping the buttons under the label.
+    width: min(500px, 100%);
     max-height: calc(100vh - 24px);
     max-height: calc(100dvh - 24px);
     overflow-x: hidden;
@@ -2261,6 +2263,67 @@ $brand: var(--dsw-alias-brand-primary);
       font-size: $font-meta;
       font-weight: 600;
     }
+  }
+
+  &-shortcut-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+  }
+
+  &-shortcut-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border: 1px solid $border-l1;
+    border-radius: $control-radius;
+    background: $bg-layer-1;
+    font-size: $font-meta;
+  }
+
+  &-shortcut-label {
+    flex: 1 1 120px;
+    min-width: 0;
+    color: $label-primary;
+  }
+
+  &-shortcut-keys {
+    flex: 0 0 auto;
+    color: $label-secondary;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: $font-tiny;
+    white-space: nowrap;
+  }
+
+  &-shortcut-actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 4px;
+  }
+
+  &-shortcut-action {
+    height: 22px;
+    padding: 0 8px;
+    border: 1px solid $border-l2;
+    border-radius: 6px;
+    background: $bg-layer-2;
+    color: $label-primary;
+    font: inherit;
+    font-size: $font-tiny;
+    cursor: pointer;
+
+    &:hover {
+      border-color: $brand;
+    }
+  }
+
+  &-shortcut-warn {
+    flex-basis: 100%;
+    color: $label-secondary;
+    font-size: $font-tiny;
   }
 
   &-workspace {
@@ -3453,6 +3516,28 @@ $brand: var(--dsw-alias-brand-primary);
 
   &-pull-checks-link {
     text-decoration: none;
+  }
+
+  // Whether an open request can merge right now; only the detail payload knows.
+  &-pull-merge-state {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 6px;
+    border: 1px solid $border-l1;
+    border-radius: 999px;
+    font-size: $font-tiny;
+    line-height: 1.5;
+    white-space: nowrap;
+
+    &.is-mergeable {
+      border-color: color-mix(in srgb, var(--dsw-alias-state-success-primary, #3fb950) 45%, transparent);
+      color: var(--dsw-alias-state-success-primary);
+    }
+
+    &.is-conflict {
+      border-color: color-mix(in srgb, var(--dsw-alias-state-error-primary) 45%, transparent);
+      color: var(--dsw-alias-state-error-primary);
+    }
   }
 
   &-pull-approval {

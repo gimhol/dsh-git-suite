@@ -6,13 +6,14 @@ import type { Translate } from '../types.js'
 import { Dropdown } from './Dropdown.js'
 import { Button } from './Button.js'
 import { RepositoryMenu } from './RepositoryMenu.js'
+import { cls } from '../styles.js'
 
 /** Project and path controls above the commit list; page size lives in Settings. */
 export function PanelControls({ view, t }: { view: GitLogView; t: Translate }): React.ReactElement {
   return (
-    <div className="dsh-gitlog-controls">
+    <div className={cls('dsh-gitlog-controls')}>
       <Dropdown
-        className="dsh-gitlog-field project"
+        className={cls('dsh-gitlog-field project')}
         value={view.selectedProjectPath}
         options={projectDropdownOptions(view, t)}
         onChange={view.selectProjectPath}
@@ -27,14 +28,14 @@ export function PanelControls({ view, t }: { view: GitLogView; t: Translate }): 
         ? (
             <Button
               title={t('backToParent')}
-              className="dsh-gitlog-parent-btn"
+              className={cls('dsh-gitlog-parent-btn')}
               onClick={() => view.openPath(view.repo?.superproject ?? '')}
             >
               {t('backToParent')}
             </Button>
           )
         : null}
-      <label className="dsh-gitlog-field grow">
+      <label className={cls('dsh-gitlog-field grow')}>
         <input
           type="text"
           value={view.pathInput}

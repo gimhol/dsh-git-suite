@@ -6,6 +6,7 @@ import { selectionAfterHeadChange } from '../lib/selection.js'
 import type { Branch, Translate } from '../types.js'
 import { DialogShell } from './DialogShell.js'
 import { Button, DialogActions } from './Button.js'
+import { cls } from '../styles.js'
 
 export interface BranchRenameDialogProps {
   view: GitLogView
@@ -47,8 +48,8 @@ export function BranchRenameDialog({ view, branch, t, onClose }: BranchRenameDia
 
   return (
     <DialogShell title={t('branchRenameTitle')} t={t} onClose={onClose}>
-      <div className="dsh-gitlog-repo-form">
-        <label className="dsh-gitlog-field">
+      <div className={cls('dsh-gitlog-repo-form')}>
+        <label className={cls('dsh-gitlog-field')}>
           <span>{t('branchName')}</span>
           <input
             type="text"
@@ -64,7 +65,7 @@ export function BranchRenameDialog({ view, branch, t, onClose }: BranchRenameDia
             autoFocus
           />
         </label>
-        {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
+        {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
         <DialogActions>
           <Button onClick={onClose}>{t('cancel')}</Button>
           <Button type="button" variant="primary" disabled={busy} onClick={() => { void renameBranch() }}>
@@ -117,12 +118,12 @@ export function BranchDeleteDialog({ view, branch, t, onClose }: BranchDeleteDia
 
   return (
     <DialogShell title={t('branchDeleteTitle')} t={t} onClose={onClose}>
-      <p className="dsh-gitlog-note">{t('branchDeleteConfirm').replace('{branch}', branch.name)}</p>
+      <p className={cls('dsh-gitlog-note')}>{t('branchDeleteConfirm').replace('{branch}', branch.name)}</p>
       {forcePrompt
         ? (
-            <div className="dsh-gitlog-branch-delete-warning">
-              <p className="dsh-gitlog-danger-text">{t('branchDeleteUnmerged')}</p>
-              <label className="dsh-gitlog-check">
+            <div className={cls('dsh-gitlog-branch-delete-warning')}>
+              <p className={cls('dsh-gitlog-danger-text')}>{t('branchDeleteUnmerged')}</p>
+              <label className={cls('dsh-gitlog-check')}>
                 <input
                   type="checkbox"
                   checked={forceConfirmed}
@@ -133,7 +134,7 @@ export function BranchDeleteDialog({ view, branch, t, onClose }: BranchDeleteDia
             </div>
           )
         : null}
-      {error === null ? null : <p className="dsh-gitlog-note" role="alert">{error}</p>}
+      {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
       <DialogActions>
         <Button onClick={onClose}>{t('cancel')}</Button>
         {forcePrompt

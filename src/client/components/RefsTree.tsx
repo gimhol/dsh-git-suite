@@ -11,6 +11,7 @@ import type { TagSelection } from './TagMenu.js'
 import { hideTooltip, showTooltip, showTooltipNow, tooltipProps } from './Tooltip.js'
 import { ChevronIcon, CurrentBranchIcon, SectionIcon } from './TreeIcons.js'
 import type { TagStatusPayload } from '../types.js'
+import { cls } from '../styles.js'
 
 export interface RefsTreeProps {
   /** Normalized repository root the tree belongs to; scopes its saved expansion. */
@@ -126,7 +127,7 @@ export function RefsTree({ repoKey, onRefresh, refreshing = false, tree, status,
    * only when the column is too narrow to show it in full.
    */
   const reveal = (event: React.SyntheticEvent<HTMLElement>, text: string, immediate = false): void => {
-    const labelElement = event.currentTarget.querySelector<HTMLElement>('.dsh-gitlog-tree-label')
+    const labelElement = event.currentTarget.querySelector<HTMLElement>(`.${cls('dsh-gitlog-tree-label')}`)
     const truncated = labelElement !== null && labelElement.scrollWidth > labelElement.clientWidth + 1
     const body = text !== '' ? text : truncated ? labelElement?.textContent ?? '' : ''
     if (body === '') {
@@ -193,7 +194,7 @@ export function RefsTree({ repoKey, onRefresh, refreshing = false, tree, status,
       } else {
         state = ancestors[level] === true ? 'is-line' : 'is-blank'
       }
-      guides.push(<span key={`guide-${level}`} className={`dsh-gitlog-tree-indent ${state}`} aria-hidden="true" />)
+      guides.push(<span key={`guide-${level}`} className={cls(`dsh-gitlog-tree-indent ${state}`)} aria-hidden="true" />)
     }
     return guides
   }
@@ -210,24 +211,24 @@ export function RefsTree({ repoKey, onRefresh, refreshing = false, tree, status,
         ? t('addBranch')
         : row.section.id === 'tags' ? t('addTag') : null
     return (
-      <div key={row.key} className="dsh-gitlog-tree-section-row" role="none">
+      <div key={row.key} className={cls('dsh-gitlog-tree-section-row')} role="none">
         <button
           type="button"
           role="treeitem"
           aria-level={1}
           aria-expanded={row.open}
-          className="dsh-gitlog-tree-section-head"
+          className={cls('dsh-gitlog-tree-section-head')}
           onClick={() => toggleSection(row.section.id)}
         >
-          <span className="dsh-gitlog-tree-twist"><ChevronIcon open={row.open} /></span>
-          <span className="dsh-gitlog-tree-glyph"><SectionIcon id={row.section.id} /></span>
-          <span className="dsh-gitlog-tree-section-title">{sectionTitle(row.section.id)}</span>
+          <span className={cls('dsh-gitlog-tree-twist')}><ChevronIcon open={row.open} /></span>
+          <span className={cls('dsh-gitlog-tree-glyph')}><SectionIcon id={row.section.id} /></span>
+          <span className={cls('dsh-gitlog-tree-section-title')}>{sectionTitle(row.section.id)}</span>
         </button>
         {addAction !== undefined && addLabel !== null
           ? (
               <button
                 type="button"
-                className="dsh-gitlog-tree-action"
+                className={cls('dsh-gitlog-tree-action')}
                 aria-label={addLabel}
                 onClick={() => addAction()}
                 onMouseEnter={event => reveal(event, addLabel)}
@@ -286,7 +287,7 @@ export function RefsTree({ repoKey, onRefresh, refreshing = false, tree, status,
         aria-expanded={isGroup ? open : undefined}
         aria-selected={isGroup ? undefined : isSelected}
         aria-current={node.current === true ? 'true' : undefined}
-        className={`dsh-gitlog-tree-row${isSelected ? ' is-selected' : ''}`}
+        className={cls(`dsh-gitlog-tree-row${isSelected ? ' is-selected' : ''}`)}
         onMouseEnter={event => reveal(event, hint)}
         onMouseLeave={hideTooltip}
         onFocus={event => {
@@ -319,16 +320,16 @@ export function RefsTree({ repoKey, onRefresh, refreshing = false, tree, status,
         onDoubleClick={localBranch === null ? undefined : () => onSwitch(localBranch)}
       >
         {renderGuides(depth, last, ancestors)}
-        <span className="dsh-gitlog-tree-twist">
+        <span className={cls('dsh-gitlog-tree-twist')}>
           {isGroup ? <ChevronIcon open={open} /> : node.current === true ? <CurrentBranchIcon /> : null}
         </span>
-        <span className={`dsh-gitlog-tree-label${node.current === true ? ' is-current' : ''}`}>{node.label}</span>
-        {counters === '' ? null : <span className="dsh-gitlog-tree-counter">{counters}</span>}
+        <span className={cls(`dsh-gitlog-tree-label${node.current === true ? ' is-current' : ''}`)}>{node.label}</span>
+        {counters === '' ? null : <span className={cls('dsh-gitlog-tree-counter')}>{counters}</span>}
         {tagState === undefined || tagState === 'same'
           ? null
           : (
               <span
-                className={`dsh-gitlog-tree-badge${tagState === 'different' ? ' is-warn' : ''}`}
+                className={cls(`dsh-gitlog-tree-badge${tagState === 'different' ? ' is-warn' : ''}`)}
                 role="img"
                 aria-label={tagState === 'local-only' ? t('tagLocalOnly') : t('tagDifferent')}
               >
@@ -340,16 +341,16 @@ export function RefsTree({ repoKey, onRefresh, refreshing = false, tree, status,
   }
 
   const renderEmpty = (row: EmptyRow): React.ReactElement => (
-    <p key={row.key} className="dsh-gitlog-tree-empty" style={{ paddingLeft: 22 + row.depth * 16 }}>
+    <p key={row.key} className={cls('dsh-gitlog-tree-empty')} style={{ paddingLeft: 22 + row.depth * 16 }}>
       {t('noTreeItems')}
     </p>
   )
 
   return (
-    <aside className="dsh-gitlog-tree" aria-busy={switching}>
-      <div className="dsh-gitlog-tree-header">
+    <aside className={cls('dsh-gitlog-tree')} aria-busy={switching}>
+      <div className={cls('dsh-gitlog-tree-header')}>
         <input
-          className="dsh-gitlog-tree-input"
+          className={cls('dsh-gitlog-tree-input')}
           type="text"
           value={query}
           onChange={event => setQuery(event.target.value)}
@@ -363,7 +364,7 @@ export function RefsTree({ repoKey, onRefresh, refreshing = false, tree, status,
           : (
               <button
                 type="button"
-                className="dsh-gitlog-tree-refresh"
+                className={cls('dsh-gitlog-tree-refresh')}
                 aria-label={t('refresh')}
                 {...tooltipProps(t('refresh'))}
                 disabled={refreshing}
@@ -373,15 +374,15 @@ export function RefsTree({ repoKey, onRefresh, refreshing = false, tree, status,
               </button>
             )}
       </div>
-      <div className="dsh-gitlog-tree-scroll">
-        {tree === null && status === 'loading' ? <p className="dsh-gitlog-tree-empty">{t('loadingRefs')}</p> : null}
+      <div className={cls('dsh-gitlog-tree-scroll')}>
+        {tree === null && status === 'loading' ? <p className={cls('dsh-gitlog-tree-empty')}>{t('loadingRefs')}</p> : null}
         {tree === null && status === 'error'
-          ? <p className="dsh-gitlog-tree-empty">{error?.message || t('treeFailed')}</p>
+          ? <p className={cls('dsh-gitlog-tree-empty')}>{error?.message || t('treeFailed')}</p>
           : null}
-        {tree !== null && searching && !anyVisible ? <p className="dsh-gitlog-tree-empty">{t('noTreeItems')}</p> : null}
+        {tree !== null && searching && !anyVisible ? <p className={cls('dsh-gitlog-tree-empty')}>{t('noTreeItems')}</p> : null}
         {tree !== null
           ? (
-              <div className="dsh-gitlog-tree-list" role="tree" aria-label={t('branches')}>
+              <div className={cls('dsh-gitlog-tree-list')} role="tree" aria-label={t('branches')}>
                 {rows.map(row => {
                   if (row.type === 'section') return renderSection(row)
                   if (row.type === 'node') return renderNode(row)

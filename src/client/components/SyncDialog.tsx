@@ -6,6 +6,7 @@ import type { Translate } from '../types.js'
 import { DialogShell } from './DialogShell.js'
 import { Button, DialogActions } from './Button.js'
 import { Dropdown } from './Dropdown.js'
+import { cls } from '../styles.js'
 
 export interface SyncDialogProps {
   action: 'pull' | 'push'
@@ -49,7 +50,7 @@ export function SyncDialog({ action, view, ws, t, onClose }: SyncDialogProps): R
 
   return (
     <DialogShell title={title} t={t} wide onClose={onClose}>
-      <div className="dsh-gitlog-field">
+      <div className={cls('dsh-gitlog-field')}>
         <span>{t('remote')}</span>
         <Dropdown
           value={remote}
@@ -62,7 +63,7 @@ export function SyncDialog({ action, view, ws, t, onClose }: SyncDialogProps): R
           placeholder={t('remote')}
         />
       </div>
-      <div className="dsh-gitlog-field">
+      <div className={cls('dsh-gitlog-field')}>
         <span>{t('branch')}</span>
         <Dropdown
           value={branch}
@@ -72,7 +73,7 @@ export function SyncDialog({ action, view, ws, t, onClose }: SyncDialogProps): R
           placeholder={t('branch')}
         />
       </div>
-      <p className="dsh-gitlog-note">
+      <p className={cls('dsh-gitlog-note')}>
         {action === 'pull'
           ? `${t('pull')} ${remote}/${branch} → ${current}`
           : `${t('push')} ${current} → ${remote}/${branch}`}

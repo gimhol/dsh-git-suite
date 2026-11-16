@@ -96,6 +96,8 @@ export function useWorkspace(path: string, revision: string, t: Translate, onCom
   const [status, setStatus] = useState<WorkspaceStatus | null>(null)
   const [statusState, setStatusState] = useState<WorkspaceLoadState>('idle')
   const [statusError, setStatusError] = useState<ApiError | null>(null)
+  /** Bumped by {@link WorkspaceView.refresh} so the open diff reloads too. */
+  const [treeRevision, setTreeRevision] = useState(0)
   const [selected, setSelected] = useState<WorkspaceSelection | null>(null)
   const [diff, setDiff] = useState<WorkspaceDiff | null>(null)
   const [diffState, setDiffState] = useState<WorkspaceLoadState>('idle')
@@ -189,10 +191,11 @@ export function useWorkspace(path: string, revision: string, t: Translate, onCom
         setDiffState('error')
       })
     return () => controller.abort()
-  }, [path, selected])
+  }, [path, selected, treeRevision])
 
   const refresh = useCallback((): void => {
     void loadStatus()
+    setTreeRevision(value => value + 1)
   }, [loadStatus])
 
   const generate = useCallback((): void => {

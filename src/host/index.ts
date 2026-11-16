@@ -9,6 +9,7 @@ import { createPullHandler } from './pr-handler.js'
 import { createPullCreateHandler } from './pr-create-handler.js'
 import { createGiteeDecisionHandler } from './pr-gitee-decision-handler.js'
 import { createPullDeleteHandler } from './pr-delete-handler.js'
+import { createCommitAiReviewHandler } from './commit-ai-review-handler.js'
 import { createPullAiReviewHandler } from './pr-ai-review-handler.js'
 import { createRemoteHandler } from './remote-handler.js'
 import { createRevealHandler } from './reveal-handler.js'
@@ -44,6 +45,7 @@ const PR_REOPEN_PATH = '/git-suite/pr-reopen'
 const PR_CREATE_PATH = '/git-suite/pr-create'
 const PR_MERGE_PATH = '/git-suite/pr-merge'
 const PR_AI_REVIEW_PATH = '/git-suite/pr-ai-review'
+const COMMIT_REVIEW_PATH = '/git-suite/commit-ai-review'
 const PR_GITEE_DECISION_PATH = '/git-suite/pr-gitee-decision'
 const PR_DELETE_PATH = '/git-suite/pr-delete'
 
@@ -208,6 +210,11 @@ export function apply(ctx: HostContext): void {
     path: PR_AI_REVIEW_PATH,
     handler: createPullAiReviewHandler(context, ctx.llm, ctx.agentDefaultModel),
   }), 'git-suite: AI pull request review route')
+  ctx.effect(() => ctx.webServer.register({
+    kind: 'exact',
+    path: COMMIT_REVIEW_PATH,
+    handler: createCommitAiReviewHandler(context, ctx.llm, ctx.agentDefaultModel),
+  }), 'git-suite: AI commit review route')
   ctx.effect(() => ctx.webServer.register({
     kind: 'exact',
     path: PR_GITEE_DECISION_PATH,

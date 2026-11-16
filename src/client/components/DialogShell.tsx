@@ -8,12 +8,14 @@ export interface DialogShellProps {
   t: Translate
   /** Wider frame for dialogs that list branches or long URLs. */
   wide?: boolean
+  /** Extra class on the frame, e.g. a larger diff dialog. */
+  frameClassName?: string
   onClose(): void
   children: React.ReactNode
 }
 
 /** Shared modal frame used by the repository and commit-action dialogs. */
-export function DialogShell({ title, t, wide = false, onClose, children }: DialogShellProps): React.ReactElement {
+export function DialogShell({ title, t, wide = false, frameClassName, onClose, children }: DialogShellProps): React.ReactElement {
   // A click only dismisses the modal when the press started on the backdrop
   // itself; selecting text inside and releasing outside must not close it.
   const pressedBackdrop = useRef(false)
@@ -39,7 +41,7 @@ export function DialogShell({ title, t, wide = false, onClose, children }: Dialo
       }}
     >
       <div
-        className={cls(`dsh-gitlog-settings dsh-gitlog-repo-dialog${wide ? ' dsh-gitlog-dialog-wide' : ''}`)}
+        className={cls(`dsh-gitlog-settings dsh-gitlog-repo-dialog${wide ? ' dsh-gitlog-dialog-wide' : ''}${frameClassName === undefined ? '' : ` ${frameClassName}`}`)}
         role="dialog"
         aria-modal="true"
         aria-label={title}

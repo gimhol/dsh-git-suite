@@ -472,6 +472,30 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh on entering the view
   }, [viewMode])
 
+  // Returning to the window re-reads the working tree, so edits made elsewhere
+  // (editors, formatters, terminals) show up without a manual refresh.
+  useEffect(() => {
+    let timer: number | null = null
+    const onFocus = (): void => {
+      if (document.visibilityState === 'hidden') return
+      if (timer !== null) window.clearTimeout(timer)
+      timer = window.setTimeout(() => {
+        timer = null
+        const workspace = liveRefresh.current.ws
+        if (workspace.statusState === 'loading') return
+        workspace.refresh()
+      }, 200)
+    }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onFocus)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onFocus)
+      if (timer !== null) window.clearTimeout(timer)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- liveRefresh ref holds current ws
+  }, [])
+
   // A conflict created anywhere (terminal included) opens the commit page,
   // where the banner and the conflict files are actionable. Only a newly seen
   // conflict set switches; going back to history afterwards is allowed.
@@ -729,6 +753,7 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
                   narrow={compact || narrow}
                   operation={operation}
                   onOperationChanged={() => { void refreshOperation() }}
+                  sessionId={sessionId}
                 />
               )
             : hasCommits

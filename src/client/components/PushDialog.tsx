@@ -27,14 +27,24 @@ export function PushDialog({ view, ws, t, onClose }: PushDialogProps): React.Rea
   const initialRemote = groups.some(group => group.name === upstreamRemote) ? upstreamRemote : groups[0]?.name ?? ''
   const [remote, setRemote] = useState(initialRemote)
   const remoteGroup = groups.find(group => group.name === remote)
+  /**
+   * Remote branch a local branch already tracks on `remoteName`, when its
+   * upstream lives on that remote. Pushing should reuse that target instead of
+   * a same-named branch, so `main-dev → origin-dev/main` keeps its pairing.
+   */
+  const trackedTarget = (branch: { upstream?: string }, remoteName: string): string | null => {
+    const value = branch.upstream ?? ''
+    const prefix = `${remoteName}/`
+    return value.startsWith(prefix) ? value.slice(prefix.length) : null
+  }
   const [checked, setChecked] = useState<Record<string, boolean>>(() => Object.fromEntries(
     locals.map(branch => [branch.name, branch.name === current]),
   ))
   const [targets, setTargets] = useState<Record<string, string>>(() => Object.fromEntries(
-    locals.map(branch => [branch.name, branch.name]),
+    locals.map(branch => [branch.name, trackedTarget(branch, initialRemote) ?? branch.name]),
   ))
   const [tracks, setTracks] = useState<Record<string, boolean>>(() => Object.fromEntries(
-    locals.map(branch => [branch.name, branch.upstream === `${initialRemote}/${branch.name}`]),
+    locals.map(branch => [branch.name, trackedTarget(branch, initialRemote) !== null]),
   ))
   const [tags, setTags] = useState(false)
   const [force, setForce] = useState(false)
@@ -54,10 +64,13 @@ export function PushDialog({ view, ws, t, onClose }: PushDialogProps): React.Rea
   }
   const chooseRemote = (value: string): void => {
     setRemote(value)
-    setTargets(Object.fromEntries(locals.map(branch => [branch.name, branch.name])))
+    // Keep a branch paired with the remote branch it already tracks on that remote.
+    setTargets(Object.fromEntries(
+      locals.map(branch => [branch.name, trackedTarget(branch, value) ?? branch.name]),
+    ))
     // The tracking column shows whether the branch already follows that remote branch.
     setTracks(Object.fromEntries(
-      locals.map(branch => [branch.name, branch.upstream === `${value}/${branch.name}`]),
+      locals.map(branch => [branch.name, trackedTarget(branch, value) !== null]),
     ))
   }
 

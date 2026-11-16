@@ -1,7 +1,7 @@
 import type { ForgeAuthPrompt } from '../components/ForgeAuthDialog.js'
 import { toast } from '../components/Toast.js'
 import { useCallback, useEffect, useRef, useState } from '../runtime.js'
-import { isAbortError, requestCredential, requestPull, requestPullAiReviewStream, requestPullCheckout, requestPullClose, requestPullCreate, requestPullDelete, requestPullGiteeDecision, requestPullMerge, requestPullReopen, requestPulls, toApiError, type ApiError } from '../lib/api.js'
+import { isAbortError, requestCredential, requestForgetPullReview, requestPull, requestPullAiReviewStream, requestPullCheckout, requestPullClose, requestPullCreate, requestPullDelete, requestPullGiteeDecision, requestPullMerge, requestPullReopen, requestPulls, toApiError, type ApiError } from '../lib/api.js'
 import { defaultForgeRemote, forgeOf, supportedRemotes } from '../lib/forge.js'
 import type { AiReviewMode, DetailStatus, LoadStatus, PullCreateBranch, PullCreateRequest, PullDetail, PullListState, PullMergeRequest, PullSummary, RemoteGroup, Translate } from '../types.js'
 
@@ -262,6 +262,11 @@ export function usePulls({ active, repoRoot, remotes, upstream, branch, branches
       if (controller.signal.aborted) return false
       setDetail(payload.pull)
       setDetailStatus('ready')
+      // Reopening a reviewed request shows its cached review immediately.
+      if (payload.cachedReview !== null && payload.cachedReview !== '') {
+        setAiReview(payload.cachedReview)
+        setAiReviewStatus('ready')
+      }
       return true
     } catch (loadError) {
       if (controller.signal.aborted || isAbortError(loadError)) return false
@@ -713,7 +718,19 @@ export function usePulls({ active, repoRoot, remotes, upstream, branch, branches
     }
   }, [])
 
+  /** Latest values for callbacks that must keep a stable identity. */
+  const scopeRef = useRef({ selected, remote, repoRoot })
+  scopeRef.current = { selected, remote, repoRoot }
+
   const clearAiReview = useCallback((): void => {
+    // Clearing is explicit: drop the host cache so reopening stays empty.
+    const { selected: number, remote: remoteName, repoRoot: root } = scopeRef.current
+    if (number !== null && remoteName !== '' && root !== '') {
+      void requestForgetPullReview({ path: root, remote: remoteName, number }).catch(() => {
+        // The local view is already cleared; say that the cached copy may return.
+        toast(t('pullAiReviewForgetFailed'))
+      })
+    }
     aiAbort.current?.abort()
     aiAbort.current = null
     aiRunningRef.current = false
@@ -724,7 +741,7 @@ export function usePulls({ active, repoRoot, remotes, upstream, branch, branches
     setAiReviewStatus('idle')
     setAiReviewContext(null)
     setAiReviewContextFiles(0)
-  }, [])
+  }, [t])
 
   const submitToken = useCallback(async (username: string, token: string): Promise<void> => {
     const prompt = authPrompt

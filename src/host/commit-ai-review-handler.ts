@@ -8,6 +8,8 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { AgentDefaultModelService, LlmService, LlmStreamChunk } from './dsh.js'
 import { RouteError } from './errors.js'
+import { createHash } from 'node:crypto'
+import { readStagedReview, writeStagedReview } from './staged-review-cache.js'
 import { runGit } from './git.js'
 import { admitHeaders, json } from './http.js'
 import { resolveRepository } from './repository.js'
@@ -19,6 +21,8 @@ const MAX_REVIEW_CHARS = 20_000
 
 interface ReviewBody {
   path?: unknown
+  /** Bypass the cached review and call the model again. */
+  fresh?: unknown
   language?: unknown
   /** Stream NDJSON progress events instead of one JSON response. */
   stream?: unknown
@@ -128,8 +132,48 @@ export function createCommitAiReviewHandler(
       if (patch.trim() === '') {
         throw new RouteError(400, 'no-staged', 'There are no staged changes to review.')
       }
+      // The hash makes the cache exact: any staging change produces a new key,
+      // so a cached review can never describe a different staged diff.
+      const hash = createHash('sha256').update(patch).digest('hex')
       const truncated = patch.length > MAX_DIFF_CHARS
       const diff = truncated ? patch.slice(0, MAX_DIFF_CHARS) : patch
+
+      const streaming = body.stream === true
+      let streamStarted = false
+      const emit = (event: unknown): void => {
+        if (!streaming || res.writableEnded) return
+        if (!streamStarted) {
+          res.writeHead(200, {
+            'content-type': 'application/x-ndjson; charset=utf-8',
+            'cache-control': 'no-store',
+            'x-content-type-options': 'nosniff',
+            'x-accel-buffering': 'no',
+          })
+          streamStarted = true
+        }
+        res.write(`${JSON.stringify(event)}\n`)
+      }
+
+      if (body.fresh !== true) {
+        const cached = await readStagedReview(repo.root, hash)
+        if (cached !== null) {
+          if (streaming) {
+            emit({ type: 'start', attempt: 1, model: cached.model, hash })
+            emit({ type: 'text', text: cached.text })
+            emit({ type: 'done', review: cached.text, model: cached.model, hash, truncated: cached.truncated })
+            res.end()
+            return
+          }
+          await send(res, json({
+            ok: true,
+            review: cached.text,
+            model: cached.model,
+            truncated: cached.truncated,
+            hash,
+          }))
+          return
+        }
+      }
 
       let selection: { provider: string; model: string; reasoningEffort?: string }
       try {
@@ -160,22 +204,7 @@ export function createCommitAiReviewHandler(
       const prompt = buildPrompt(diff, truncated, language)
       const retryPrompt = `${prompt}\n\nIMPORTANT: A previous attempt exhausted the output budget while reasoning. Output the final review directly now; do not include analysis or thinking.`
 
-      const streaming = body.stream === true
-      let streamStarted = false
-      const emit = (event: unknown): void => {
-        if (!streaming || res.writableEnded) return
-        if (!streamStarted) {
-          res.writeHead(200, {
-            'content-type': 'application/x-ndjson; charset=utf-8',
-            'cache-control': 'no-store',
-            'x-content-type-options': 'nosniff',
-            'x-accel-buffering': 'no',
-          })
-          streamStarted = true
-        }
-        res.write(`${JSON.stringify(event)}\n`)
-      }
-      emit({ type: 'start', attempt: 1, model: selection.model })
+      emit({ type: 'start', attempt: 1, model: selection.model, hash })
 
       const runAttempt = async (
         maxTokens: number,
@@ -239,12 +268,14 @@ export function createCommitAiReviewHandler(
         }
         throw new RouteError(502, 'empty-review', 'The model returned an empty review.')
       }
+      // Remember this review for the exact staged patch it describes.
+      await writeStagedReview(repo.root, hash, review, selection.model, truncated)
       if (streaming) {
-        emit({ type: 'done', review, model: selection.model, truncated })
+        emit({ type: 'done', review, model: selection.model, hash, truncated })
         res.end()
         return
       }
-      await send(res, json({ ok: true, review, model: selection.model, truncated }))
+      await send(res, json({ ok: true, review, model: selection.model, hash, truncated }))
     } catch (error) {
       if (res.headersSent) {
         if (!res.writableEnded) {

@@ -78,6 +78,10 @@ function build() {
   compileStyles()
   checkClassNames(clientDir, readFileSync(moduleCssFile, 'utf8'))
   mkdirSync(tempDir, { recursive: true })
+  // A fresh checkout (CI) has no generated stylesheet yet. The first pass only
+  // hashes CSS, but it still resolves every import, so give it an empty file
+  // and overwrite it with the real text before the inlining pass.
+  writeFileSync(generatedFile, '')
   const passJs = join(tempDir, 'pass.js')
   runEsbuild(passJs)
   writeFileSync(generatedFile, readFileSync(join(tempDir, 'pass.css'), 'utf8'))

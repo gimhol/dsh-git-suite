@@ -78,12 +78,20 @@ export async function readLog(context: RouteContext, url: URL, signal: AbortSign
     scope = 'ref'
   }
 
+  // `%D` decorates with every ref pointing at a commit, remote-tracking ones
+  // included, so hiding remotes has to exclude them explicitly or the history
+  // keeps showing `origin/main` next to the branch.
+  const decorateArgs = !showRemotes && (scope === 'head' || scope === 'all')
+    ? ['--decorate-refs-exclude=refs/remotes/*']
+    : []
+
   const logArgs = stash
     ? [
         '--no-walk',
         '--date=iso-strict',
         '--encoding=UTF-8',
         '--decorate=short',
+        ...decorateArgs,
         '-z',
         '--pretty=format:%H%x1f%h%x1f%an%x1f%ae%x1f%aI%x1f%P%x1f%D%x1f%s',
         '-n',
@@ -95,6 +103,7 @@ export async function readLog(context: RouteContext, url: URL, signal: AbortSign
         '--date=iso-strict',
         '--encoding=UTF-8',
         '--decorate=short',
+        ...decorateArgs,
         '-z',
         '--pretty=format:%H%x1f%h%x1f%an%x1f%ae%x1f%aI%x1f%P%x1f%D%x1f%s',
         ...offsetArgs,

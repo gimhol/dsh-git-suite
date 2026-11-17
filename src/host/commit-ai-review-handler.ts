@@ -11,6 +11,7 @@ import { RouteError } from './errors.js'
 import { createHash } from 'node:crypto'
 import { readStagedReview, writeStagedReview } from './staged-review-cache.js'
 import { runGit } from './git.js'
+import { defaultPrompt, renderPrompt } from './ai-prompts.js'
 import { admitHeaders, json } from './http.js'
 import { resolveRepository } from './repository.js'
 import type { RouteContext } from './types.js'
@@ -26,6 +27,8 @@ interface ReviewBody {
   language?: unknown
   /** Stream NDJSON progress events instead of one JSON response. */
   stream?: unknown
+  /** User prompt template; the built-in text applies when absent. */
+  prompt?: unknown
 }
 
 function header(req: IncomingMessage, name: string): string | null {
@@ -72,24 +75,11 @@ function errorEvent(error: unknown): { type: 'error'; error: { code: string; mes
 }
 
 /** @returns the review prompt for one staged diff. */
-function buildPrompt(diff: string, truncated: boolean, language: string): string {
-  return [
-    'Review the staged changes that are about to be committed.',
-    '',
-    'Staged diff:',
-    diff === '' ? '(none)' : diff,
-    truncated ? '\n[diff truncated]' : '',
-    '',
-    'Write a code review in Markdown. Focus only on these staged changes:',
-    '- Correctness bugs, edge cases, and regressions.',
-    '- Security, data-loss, and performance risks.',
-    '- Missing or inadequate tests.',
-    '- Concrete suggestions with file paths and, when possible, hunk context.',
-    'Use sections: Summary, Issues (with severity high/medium/low), Tests, Suggestions.',
-    'If something is uncertain or not visible in the diff, say so instead of guessing.',
-    'Do not praise, and do not invent code that is not in the diff.',
-    `Respond in ${language}.`,
-  ].join('\n')
+function buildPrompt(diff: string, truncated: boolean, language: string, template: string): string {
+  return renderPrompt(template, {
+    diff: `${diff === '' ? '(none)' : diff}${truncated ? '\n[diff truncated]' : ''}`,
+    language,
+  })
 }
 
 /**
@@ -201,7 +191,10 @@ export function createCommitAiReviewHandler(
       const language = typeof body.language === 'string' && body.language.toLowerCase().startsWith('zh')
         ? 'Simplified Chinese'
         : 'English'
-      const prompt = buildPrompt(diff, truncated, language)
+      const template = typeof body.prompt === 'string' && body.prompt.trim() !== ''
+        ? body.prompt
+        : defaultPrompt('commitReview')
+      const prompt = buildPrompt(diff, truncated, language, template)
       const retryPrompt = `${prompt}\n\nIMPORTANT: A previous attempt exhausted the output budget while reasoning. Output the final review directly now; do not include analysis or thinking.`
 
       emit({ type: 'start', attempt: 1, model: selection.model, hash })

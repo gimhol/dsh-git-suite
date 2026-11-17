@@ -387,6 +387,8 @@ export interface PullAiReviewCall {
   number: number
   language?: string
   context?: AiReviewMode
+  /** User prompt template; the host falls back to its built-in text. */
+  prompt?: string
 }
 
 /** POST /git-suite/pr-ai-review: ask the default model for a read-only review. */
@@ -501,7 +503,7 @@ export async function requestPullAiReviewStream(
  * diff. The host only reads `git diff --cached`; nothing is committed.
  */
 export async function requestCommitReviewStream(
-  body: { path: string; language?: string; fresh?: boolean },
+  body: { path: string; language?: string; fresh?: boolean; prompt?: string },
   onEvent: (event: CommitReviewStreamEvent) => void,
   signal?: AbortSignal,
 ): Promise<CommitReviewPayload> {
@@ -633,6 +635,8 @@ export async function requestRevealFile(body: RevealFileRequest, signal?: AbortS
 
 export interface GenerateMessageRequest {
   path: string
+  /** User prompt template; the host falls back to its built-in text. */
+  prompt?: string
 }
 
 /** POST /git-suite/generate-message; the host summarizes the staged (or unstaged) diff with the default model. */

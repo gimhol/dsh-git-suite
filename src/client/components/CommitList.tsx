@@ -2,6 +2,7 @@ import type * as React from 'react'
 import { h, useEffect, useRef, useState } from '../runtime.js'
 import type { GitLogView } from '../hooks/useGitLogView.js'
 import { graphGeometry } from '../lib/graph.js'
+import { refTooltip } from '../lib/ref-tooltip.js'
 import type { Commit, CommitColumn, CommitColumns, Translate } from '../types.js'
 import { CommitColumnsMenu } from './CommitColumnsMenu.js'
 import { tooltipProps } from './Tooltip.js'
@@ -405,6 +406,7 @@ export function CommitList({ view, t, onContextMenu, onRefContextMenu }: {
               row={row}
               geometry={geometry}
               columns={columns}
+              refTooltipOf={ref => refTooltip(ref, view.tree, commit.shortHash, t)}
             />
           )
         }}

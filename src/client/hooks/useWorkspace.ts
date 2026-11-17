@@ -9,6 +9,7 @@ import {
   type ApiError,
   type WorkspaceActionRequest,
 } from '../lib/api.js'
+import { resolvePrompt } from '../lib/ai-prompts.js'
 import { readRepoUiState, writeRepoUiState } from '../lib/ui-state.js'
 import { requestCredential } from '../lib/api.js'
 import type {
@@ -205,7 +206,7 @@ export function useWorkspace(path: string, revision: string, t: Translate, onCom
     generateAbort.current = controller
     setGenerateState('loading')
     setGenerateError(null)
-    requestGenerateMessage({ path }, controller.signal)
+    requestGenerateMessage({ path, prompt: resolvePrompt('commitMessage', path).template }, controller.signal)
       .then(payload => {
         if (controller.signal.aborted) return
         setMessage(payload.message)

@@ -4,6 +4,8 @@
  * global preference.
  */
 
+import type { PromptKind } from '../../host/ai-prompts.js'
+
 export type ViewMode = 'history' | 'workspace' | 'pulls'
 export type SortMode = 'date' | 'topo'
 
@@ -34,6 +36,12 @@ export interface RepoUiState {
   openSections?: Record<string, boolean>
   /** Collapsed ref-tree folders for this repository. */
   collapsedFolders?: Record<string, boolean>
+  /** Per-view visibility of the refs tree, each page owning its own choice. */
+  treeVisible?: Partial<Record<ViewMode, boolean>>
+  /** The history scope last chosen in the branch dropdown. */
+  logSelection?: { kind: 'head' | 'all' | 'branch'; ref?: string; name?: string; remote?: boolean }
+  /** Prompt template overrides for this repository's AI features. */
+  aiPrompts?: Partial<Record<PromptKind, string>>
   /** The unsent commit message of this repository. */
   draft?: string
 }
@@ -42,6 +50,8 @@ export interface RepoUiState {
 export interface UiState {
   /** Diff layout: unified rows or a side-by-side split. */
   diffMode?: 'unified' | 'split'
+  /** Prompt template overrides shared by every repository. */
+  aiPrompts?: Partial<Record<PromptKind, string>>
   /** Per-repository buckets keyed by `normalizeRepoKey(repoRoot)`. */
   repos?: Record<string, RepoUiState>
 }
@@ -63,6 +73,39 @@ function stringRecord(value: unknown): Record<string, string> | undefined {
     if (typeof item === 'string') out[key] = item
   }
   return out
+}
+
+/** Parse a per-view visibility map, accepting a legacy single boolean. */
+function treeVisibility(value: unknown): Partial<Record<ViewMode, boolean>> | undefined {
+  if (typeof value === 'boolean') return { history: value, workspace: value }
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return undefined
+  const source = value as Record<string, unknown>
+  const out: Partial<Record<ViewMode, boolean>> = {}
+  for (const mode of ['history', 'workspace', 'pulls'] as const) {
+    if (typeof source[mode] === 'boolean') out[mode] = source[mode]
+  }
+  return Object.keys(out).length > 0 ? out : undefined
+}
+
+/** Parse the stored history scope; only the dropdown kinds are persisted. */
+function logSelectionOf(value: unknown): RepoUiState['logSelection'] {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return undefined
+  const source = value as Record<string, unknown>
+  if (source.kind === 'head' || source.kind === 'all') return { kind: source.kind }
+  if (source.kind !== 'branch') return undefined
+  if (typeof source.ref !== 'string' || source.ref === '') return undefined
+  if (typeof source.name !== 'string' || source.name === '') return undefined
+  return { kind: 'branch', ref: source.ref, name: source.name, remote: source.remote === true }
+}
+
+/** Parse prompt overrides: non-empty strings keyed by prompt kind. */
+function promptRecord(value: unknown): Partial<Record<PromptKind, string>> | undefined {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return undefined
+  const out: Partial<Record<PromptKind, string>> = {}
+  for (const [key, item] of Object.entries(value)) {
+    if (typeof item === 'string' && item.trim() !== '') out[key as PromptKind] = item
+  }
+  return Object.keys(out).length > 0 ? out : undefined
 }
 
 function booleanRecord(value: unknown): Record<string, boolean> | undefined {
@@ -113,6 +156,8 @@ function readRaw(): RawState {
     const legacy: RepoUiState = {}
 
     if (source.diffMode === 'unified' || source.diffMode === 'split') global.diffMode = source.diffMode
+    const aiPrompts = promptRecord(source.aiPrompts)
+    if (aiPrompts !== undefined) global.aiPrompts = aiPrompts
 
     if (typeof source.repos === 'object' && source.repos !== null && !Array.isArray(source.repos)) {
       const repos: Record<string, RepoUiState> = {}
@@ -130,6 +175,10 @@ function readRaw(): RawState {
     if (limit !== undefined && limit > 0) legacy.limit = Math.round(limit)
     if (source.sort === 'date' || source.sort === 'topo') legacy.sort = source.sort
     if (typeof source.showRemotes === 'boolean') legacy.showRemotes = source.showRemotes
+    const legacySelection = logSelectionOf(source.logSelection)
+    if (legacySelection !== undefined) legacy.logSelection = legacySelection
+    const legacyTree = treeVisibility(source.treeVisible)
+    if (legacyTree !== undefined) legacy.treeVisible = legacyTree
     for (const key of ['treeWidth', 'treeHeight', 'detailRatio', 'commitFilesWidth', 'commitStagedHeight', 'commitFormHeight', 'commitNarrowHeight', 'commitFilesHeight', 'pullsListWidth', 'pullsListHeight'] as const) {
       const value = finite(source[key])
       if (value !== undefined) legacy[key] = value
@@ -156,6 +205,12 @@ function parseRepoState(value: unknown): RepoUiState | undefined {
   if (limit !== undefined && limit > 0) bucket.limit = Math.round(limit)
   if (source.sort === 'date' || source.sort === 'topo') bucket.sort = source.sort
   if (typeof source.showRemotes === 'boolean') bucket.showRemotes = source.showRemotes
+  const aiPrompts = promptRecord(source.aiPrompts)
+  if (aiPrompts !== undefined) bucket.aiPrompts = aiPrompts
+  const logSelection = logSelectionOf(source.logSelection)
+  if (logSelection !== undefined) bucket.logSelection = logSelection
+  const treeVisible = treeVisibility(source.treeVisible)
+  if (treeVisible !== undefined) bucket.treeVisible = treeVisible
   for (const key of ['treeWidth', 'treeHeight', 'detailRatio', 'commitFilesWidth', 'commitStagedHeight', 'commitFormHeight', 'commitNarrowHeight', 'commitFilesHeight', 'pullsListWidth', 'pullsListHeight'] as const) {
     const value = finite(source[key])
     if (value !== undefined) bucket[key] = value

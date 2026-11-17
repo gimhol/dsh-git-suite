@@ -4,7 +4,7 @@ import { layoutGraph, type GraphLayout } from '../lib/graph.js'
 import { buildProjectGroups, findCurrentProject, type ProjectGroups } from '../lib/projects.js'
 import { addRecentProject, readRecentProjects, writeRecentProjects } from '../lib/recent-projects.js'
 import { requestSessionRepo } from '../lib/api.js'
-import { selectionAfterHeadChange, selectionLabel, selectionParams } from '../lib/selection.js'
+import { selectionAfterHeadChange, selectionFromStored, selectionKey, selectionLabel, selectionParams, storedSelection } from '../lib/selection.js'
 import { type RepoUiState, readRepoUiState, writeRepoUiState } from '../lib/ui-state.js'
 import type {
   Commit,
@@ -285,14 +285,14 @@ export function useGitLogView(t: Translate, options?: { sessionId?: string }): G
   const setSort = useCallback((value: 'date' | 'topo'): void => {
     if (value === sort) return
     setSortState(value)
-    writeRepoUiState({ sort: value })
+    writeRepoUiState({ sort: value }, repo?.repoRoot ?? undefined)
     void loadLog({ path: repo?.repoRoot ?? pathInput.trim(), limit, offset: 0, selection, sort: value })
   }, [sort, loadLog, repo, pathInput, limit, selection])
 
   const setShowRemotes = useCallback((value: boolean): void => {
     if (value === showRemotes) return
     setShowRemotesState(value)
-    writeRepoUiState({ showRemotes: value })
+    writeRepoUiState({ showRemotes: value }, repo?.repoRoot ?? undefined)
     if (selection.kind === 'all') {
       void loadLog({ path: repo?.repoRoot ?? pathInput.trim(), limit, offset: 0, selection, showRemotes: value })
     }
@@ -302,14 +302,38 @@ export function useGitLogView(t: Translate, options?: { sessionId?: string }): G
     const nextLimit = stored.limit ?? DEFAULT_LIMIT
     const nextSort = stored.sort ?? 'date'
     const nextShowRemotes = stored.showRemotes ?? false
+    // Restore the branch dropdown's last choice along with the other preferences.
+    const nextSelection = selectionFromStored(stored.logSelection)
     setLimitState(nextLimit)
     setSortState(nextSort)
     setShowRemotesState(nextShowRemotes)
+    setSelection(nextSelection)
     const target = repo?.repoRoot ?? pathInput.trim()
     if (target === '') return
-    if (nextLimit === limit && nextSort === sort && nextShowRemotes === showRemotes) return
-    void loadLog({ path: target, limit: nextLimit, offset: 0, selection: HEAD, sort: nextSort, showRemotes: nextShowRemotes })
-  }, [repo, pathInput, limit, sort, showRemotes, loadLog])
+    if (
+      nextLimit === limit
+      && nextSort === sort
+      && nextShowRemotes === showRemotes
+      && selectionKey(nextSelection) === selectionKey(selection)
+    ) return
+    void loadLog({
+      path: target,
+      limit: nextLimit,
+      offset: 0,
+      selection: nextSelection,
+      sort: nextSort,
+      showRemotes: nextShowRemotes,
+    })
+  }, [repo, pathInput, limit, sort, showRemotes, selection, loadLog])
+
+  // A restored branch that no longer exists (deleted since last time) falls
+  // back to HEAD instead of leaving the list on a dead scope.
+  useEffect(() => {
+    if (selection.kind !== 'branch' || tree === null) return
+    if (tree.branches.some(branch => branch.ref === selection.ref)) return
+    setSelection(HEAD)
+    void loadLog({ path: repo?.repoRoot ?? pathInput.trim(), limit, offset: 0, selection: HEAD })
+  }, [tree, selection, repo, pathInput, limit, loadLog])
 
   const changePathText = useCallback((value: string) => {    setPathInput(value)
     setSelectedProjectPath('')
@@ -355,6 +379,9 @@ export function useGitLogView(t: Translate, options?: { sessionId?: string }): G
 
   const selectRef = (next: Selection): void => {
     setSelection(next)
+    // The branch dropdown is a per-repository preference; remember it.
+    const stored = storedSelection(next)
+    if (stored !== undefined) writeRepoUiState({ logSelection: stored }, repo?.repoRoot ?? undefined)
     void loadLog({
       path: repo?.repoRoot ?? pathInput.trim(),
       limit,

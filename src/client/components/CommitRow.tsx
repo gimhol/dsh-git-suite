@@ -23,9 +23,11 @@ export interface CommitRowProps {
   geometry: GraphGeometry
   /** Columns the header menu currently shows. */
   columns: CommitColumns
+  /** Tooltip text for one ref chip; null leaves it silent. */
+  refTooltipOf?(ref: string): string | null
 }
 
-export function CommitRow({ commit, selected, onSelect, onContextMenu, onRefContextMenu, t, row, geometry, columns }: CommitRowProps): React.ReactElement {
+export function CommitRow({ commit, selected, onSelect, onContextMenu, onRefContextMenu, t, row, geometry, columns, refTooltipOf }: CommitRowProps): React.ReactElement {
   const isMerge = commit.parents.length > 1
   return (
     <button
@@ -43,7 +45,7 @@ export function CommitRow({ commit, selected, onSelect, onContextMenu, onRefCont
           )
         : null}
       <span className={cls('dsh-gitlog-desc')}>
-        <Refs refs={commit.refs} onRefContextMenu={onRefContextMenu} />
+        <Refs refs={commit.refs} onRefContextMenu={onRefContextMenu} tooltipOf={refTooltipOf} />
         <span className={cls('dsh-gitlog-subject')} {...tooltipProps(commit.subject || t('noSubject'))}>{commit.subject || t('noSubject')}</span>
         {isMerge ? <span className={cls('dsh-gitlog-merge')}>{t('merge')}</span> : null}
       </span>

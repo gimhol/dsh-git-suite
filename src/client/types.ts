@@ -304,6 +304,8 @@ export interface PullDraftRequest {
   base: string
   head: string
   language?: string
+  /** User prompt template; the host falls back to its built-in text. */
+  prompt?: string
 }
 
 /** AI-drafted pull request title and body. */

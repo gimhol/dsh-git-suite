@@ -6,6 +6,7 @@ import type * as React from 'react'
 import { h, useCallback, useEffect, useRef, useState } from '../runtime.js'
 import type { GitLogView } from '../hooks/useGitLogView.js'
 import { isAbortError, requestCommitReviewStream, requestStagedHash, toApiError } from '../lib/api.js'
+import { resolvePrompt } from '../lib/ai-prompts.js'
 import { sessionInsert } from '../sessionBridge.js'
 import type { Translate } from '../types.js'
 import { Button, DialogActions } from './Button.js'
@@ -51,7 +52,12 @@ export function CommitReviewDialog({ view, t, sessionId, onClose }: CommitReview
     setStale(false)
     setReviewHash('')
     void requestCommitReviewStream(
-      { path: view.repo?.repoRoot ?? view.pathInput.trim(), language: t('localeId'), fresh },
+      {
+        path: view.repo?.repoRoot ?? view.pathInput.trim(),
+        language: t('localeId'),
+        fresh,
+        prompt: resolvePrompt('commitReview', view.repo?.repoRoot ?? null).template,
+      },
       event => {
         if (event.type === 'start') {
           setAttempt(event.attempt)

@@ -27,6 +27,7 @@ import { CredentialDialog } from './components/CredentialDialog.js'
 import { FetchTagDialog } from './components/FetchTagDialog.js'
 import { StashMenu, type StashMenuState } from './components/StashMenu.js'
 import { ConflictBanner } from './components/ConflictBanner.js'
+import { refTooltip } from './lib/ref-tooltip.js'
 import { toast } from './components/Toast.js'
 import { Button } from './components/Button.js'
 import { GitLogIcon } from './components/GitLogIcon.js'
@@ -147,7 +148,8 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
       ws.refresh()
     },
   })
-  const [treeOverride, setTreeOverride] = useState<boolean | null>(null)
+  /** Per-page tree visibility choices; each view keeps its own. */
+  const [treeOverrides, setTreeOverrides] = useState<Partial<Record<ViewMode, boolean>>>({})
   const [commitMenu, setCommitMenu] = useState<CommitContext | null>(null)
   const [remoteMenu, setRemoteMenu] = useState<RemoteMenuState | null>(null)
   const [remoteDelete, setRemoteDelete] = useState<string | null>(null)
@@ -228,11 +230,18 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
   // The right panel's commit page starts without the refs tree: the lists and
   // the diff need the height. The header toggle still brings it back.
   const treeDefault = viewMode !== 'pulls' && !(compact && viewMode === 'workspace')
-  const treeVisible = treeOverride ?? treeDefault
+  // Each page owns its own show/hide choice; the pull request page never shows
+  // the tree at all.
+  const treeVisible = viewMode === 'pulls' ? false : treeOverrides[viewMode] ?? treeDefault
 
-  useEffect(() => {
-    setTreeOverride(null)
-  }, [viewMode, compact])
+  // An explicit show/hide belongs to the current page, so switching pages keeps
+  // each page's own state and a reload restores both.
+  const toggleTree = (): void => {
+    if (viewMode === 'pulls') return
+    const next = { ...treeOverrides, [viewMode]: !treeVisible }
+    setTreeOverrides(next)
+    writeRepoUiState({ treeVisible: next }, repoRoot === '' ? undefined : repoRoot)
+  }
 
   // Every repository keeps its own bucket: adopt it when the panel switches.
   useEffect(() => {
@@ -243,6 +252,7 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
     if (stored.treeWidth !== undefined) treeWidthSize.apply(stored.treeWidth)
     if (stored.treeHeight !== undefined) treeHeightSize.apply(stored.treeHeight)
     if (stored.detailRatio !== undefined) detailSize.apply(stored.detailRatio)
+    setTreeOverrides(stored.treeVisible ?? {})
     view.applyRepoPreferences(stored)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one run per repository
   }, [repoRoot])
@@ -832,6 +842,7 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
                   status={detailStatus}
                   error={detailError}
                   t={t}
+                  refTooltipOf={ref => refTooltip(ref, view.tree, detail?.shortHash ?? '', t)}
                 />
               </aside>
             )
@@ -875,7 +886,7 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
                 <Button
                   iconOnly
                   title={treeVisible ? t('hideTree') : t('showTree')}
-                  onClick={() => setTreeOverride(!treeVisible)}
+                  onClick={toggleTree}
                   ariaPressed={treeVisible}
                   icon={<GitLogIcon size={16} />}
                 />
@@ -933,6 +944,7 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
               limit={view.limit}
               t={t}
               version={version}
+              repoRoot={view.repo?.repoRoot ?? null}
               onChange={view.setLimit}
               onClose={() => setSettingsOpen(false)}
             />

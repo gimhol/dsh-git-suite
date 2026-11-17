@@ -2,6 +2,7 @@ import type { ForgeAuthPrompt } from '../components/ForgeAuthDialog.js'
 import { toast } from '../components/Toast.js'
 import { useCallback, useEffect, useRef, useState } from '../runtime.js'
 import { isAbortError, requestCredential, requestForgetPullReview, requestPull, requestPullAiReviewStream, requestPullCheckout, requestPullClose, requestPullCreate, requestPullDelete, requestPullGiteeDecision, requestPullMerge, requestPullReopen, requestPulls, toApiError, type ApiError } from '../lib/api.js'
+import { resolvePrompt } from '../lib/ai-prompts.js'
 import { defaultForgeRemote, forgeOf, supportedRemotes } from '../lib/forge.js'
 import type { AiReviewMode, DetailStatus, LoadStatus, PullCreateBranch, PullCreateRequest, PullDetail, PullListState, PullMergeRequest, PullSummary, RemoteGroup, Translate } from '../types.js'
 
@@ -659,6 +660,7 @@ export function usePulls({ active, repoRoot, remotes, upstream, branch, branches
       number,
       language: t('localeId'),
       context: mode,
+      prompt: resolvePrompt('prReview', repoRoot === '' ? null : repoRoot).template,
     }, event => {
       if (event.type === 'start') {
         setAiReviewAttempt(event.attempt)

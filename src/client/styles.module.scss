@@ -2388,6 +2388,74 @@ $brand: var(--dsw-alias-brand-primary);
     }
   }
 
+  // Feature and scope share one row in the prompt editor.
+  &-prompt-fields {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+  }
+
+  &-prompt-field {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  // Prompt template editor in the settings dialog.
+  &-prompt-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+  }
+
+  &-prompt-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 30px;
+  }
+
+  &-prompt-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    font-size: $font-body;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: $label-primary;
+  }
+
+  &-prompt-source {
+    flex: 0 0 auto;
+    color: $label-secondary;
+    font-size: $font-meta;
+  }
+
+  // The editor's own modal is wider than a settings frame.
+  &-settings.dsh-gitlog-prompt-dialog {
+    width: min(760px, 94vw);
+  }
+
+  &-prompt-text {
+    width: 100%;
+    min-height: 200px;
+    max-height: 46vh;
+    resize: vertical;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    border: 1px solid $border-l1;
+    border-radius: 6px;
+    background: $bg-layer-1;
+    color: $label-primary;
+    font-family: var(--gitlog-mono);
+    font-size: $font-body;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    tab-size: 2;
+  }
+
   &-shortcut-list {
     display: flex;
     flex-direction: column;

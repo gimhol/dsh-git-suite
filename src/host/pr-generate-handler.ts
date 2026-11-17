@@ -10,6 +10,7 @@ import { RouteError } from './errors.js'
 import { gitFailure, runGit } from './git.js'
 import { admitHeaders, failure, json } from './http.js'
 import { resolveRepository } from './repository.js'
+import { defaultPrompt, renderPrompt } from './ai-prompts.js'
 import type { RouteContext } from './types.js'
 
 const MAX_BODY_BYTES = 16 * 1024
@@ -23,6 +24,8 @@ interface DraftBody {
   base?: unknown
   head?: unknown
   language?: unknown
+  /** User prompt template; the built-in text applies when absent. */
+  prompt?: unknown
 }
 
 function header(req: IncomingMessage, name: string): string | null {
@@ -83,22 +86,14 @@ function parseDraft(raw: string): { title: string; body: string } {
   return { title, body }
 }
 
-function buildPrompt(head: string, base: string, commits: string, diff: string, truncated: boolean, language: string): string {
-  return [
-    `Write a pull request that merges "${head}" into "${base}".`,
-    'Reply with the title on the first line (at most 72 characters), then a blank line, then a Markdown description.',
-    'Use these sections in the description: Summary, Changes, Testing.',
-    'Do not wrap the reply in code fences, do not repeat the title in the body, and do not invent changes.',
-    '',
-    'Commits between the base and the head:',
-    commits.trim() === '' ? '(none)' : commits.trim(),
-    '',
-    'Diff (base...head):',
-    diff.trim() === '' ? '(no textual diff)' : diff.slice(0, MAX_DIFF_CHARS),
-    truncated ? '\n[diff truncated]' : '',
-    '',
-    `Respond in ${language}.`,
-  ].join('\n')
+function buildPrompt(head: string, base: string, commits: string, diff: string, truncated: boolean, language: string, template: string): string {
+  return renderPrompt(template, {
+    head,
+    base,
+    commits: commits.trim() === '' ? '(none)' : commits.trim(),
+    diff: `${diff.trim() === '' ? '(no textual diff)' : diff.slice(0, MAX_DIFF_CHARS)}${truncated ? '\n[diff truncated]' : ''}`,
+    language,
+  })
 }
 
 /** POST /git-suite/pr-generate: draft a pull request title and body with the default model. */
@@ -175,6 +170,9 @@ export function createPullDraftHandler(
         ? 'Simplified Chinese'
         : 'English'
       const truncated = diff.length > MAX_DIFF_CHARS
+      const template = typeof body.prompt === 'string' && body.prompt.trim() !== ''
+        ? body.prompt
+        : defaultPrompt('prDraft')
       const prompt = buildPrompt(
         head,
         base,
@@ -182,6 +180,7 @@ export function createPullDraftHandler(
         diff,
         truncated,
         language,
+        template,
       )
 
       let output = ''

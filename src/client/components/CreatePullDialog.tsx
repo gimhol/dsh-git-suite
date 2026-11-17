@@ -7,6 +7,7 @@ import { SparkleIcon } from './GitLogIcon.js'
 import { DialogShell } from './DialogShell.js'
 import { Dropdown } from './Dropdown.js'
 import { requestPullDraft, toApiError } from '../lib/api.js'
+import { resolvePrompt } from '../lib/ai-prompts.js'
 import { forgeLabel, forgeOf } from '../lib/forge.js'
 import { cls } from '../styles.js'
 
@@ -161,6 +162,7 @@ export function CreatePullDialog({ view, t, onClose }: CreatePullDialogProps): R
         base,
         head,
         language: t('localeId'),
+        prompt: resolvePrompt('prDraft', view.repoRoot).template,
       })
       setTitle(draft.title)
       setBody(draft.body)

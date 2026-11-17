@@ -20,6 +20,8 @@ export interface DetailPaneProps {
   status: DetailStatus
   error: ApiError | null
   t: Translate
+  /** Tooltip text for one ref chip; null leaves it silent. */
+  refTooltipOf?(ref: string): string | null
 }
 
 const DEFAULT_INFO_RATIO = 0.4
@@ -33,7 +35,7 @@ function clamp(value: number, min: number, max: number): number {
  * The pane under the log: commit metadata and changed files on the left, the
  * patch on the right. The sidebar layout stacks the two columns instead.
  */
-export function DetailPane({ detail, status, error, t }: DetailPaneProps): React.ReactElement {
+export function DetailPane({ detail, status, error, t, refTooltipOf }: DetailPaneProps): React.ReactElement {
   const [fileChoice, setFileChoice] = useState<{ hash: string | null; index: number }>({ hash: null, index: 0 })
   /** The selected file's patch shown in its own modal window. */
   const [diffDialogOpen, setDiffDialogOpen] = useState(false)
@@ -128,7 +130,7 @@ export function DetailPane({ detail, status, error, t }: DetailPaneProps): React
             <dt>{t('parents')}</dt>
             <dd>{detail.parents.length === 0 ? t('rootCommit') : detail.parents.map(parent => parent.slice(0, 12)).join(', ')}</dd>
             <dt>{t('commitRefs')}</dt>
-            <dd><Refs refs={detail.refs} /></dd>
+            <dd><Refs refs={detail.refs} tooltipOf={refTooltipOf} /></dd>
             <dt>{t('commitMessage')}</dt>
             <dd className={cls('dsh-gitlog-detail-message')}>
               <div className={cls('dsh-gitlog-detail-subject')}>{detail.subject || t('noSubject')}</div>

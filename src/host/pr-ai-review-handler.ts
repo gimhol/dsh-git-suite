@@ -9,6 +9,7 @@ import { admitHeaders, failure, json } from './http.js'
 import { resolveRepository } from './repository.js'
 import type { PullDetail, PullFile, RouteContext } from './types.js'
 import { readReviewContext, type ReviewContext, type ReviewContextMode } from './pr-review-context.js'
+import { defaultPrompt, renderPrompt } from './ai-prompts.js'
 import { writeReviewCache } from './pr-review-cache.js'
 
 const MAX_BODY_BYTES = 64 * 1024
@@ -41,6 +42,8 @@ interface ReviewBody {
   context?: unknown
   /** Stream NDJSON progress events instead of one JSON response. */
   stream?: unknown
+  /** User prompt template; the built-in text applies when absent. */
+  prompt?: unknown
 }
 
 function header(req: IncomingMessage, name: string): string | null {
@@ -114,6 +117,7 @@ function buildPrompt(
   language: string,
   context: ReviewContext,
   diffBudget: number,
+  template: string,
 ): { prompt: string; truncated: boolean } {
   const diff = diffExcerpt(pull, diffBudget)
   const description = pull.body.trim().slice(0, MAX_DESCRIPTION_CHARS)
@@ -123,37 +127,20 @@ function buildPrompt(
     : context.files.map(file => `### ${file.path}\n${file.content}`).join('\n\n')
   return {
     truncated: diff.truncated || context.truncated,
-    prompt: [
-      `Review pull request #${pull.number}: ${pull.title}`,
-      `Source: ${pull.sourceBranch} → ${pull.targetBranch}`,
-      `Author: ${pull.author === '' ? 'unknown' : pull.author}`,
-      '',
-      'Description:',
-      description === '' ? '(none)' : description,
-      '',
-      `Commits (${pull.commits.length}):`,
-      commits === '' ? '(none)' : commits,
-      '',
-      `Changed files (${pull.files.length}${pull.filesTruncated ? '+' : ''}):`,
-      diff.text === '' ? '(no textual diff)' : diff.text,
-      diff.truncated ? '\n[diff truncated]' : '',
-      '',
-      'Some patches may be unavailable from the forge; when complete file contents are supplied below, trust them over missing patches.',
-      '',
-      'Full contents of changed files at the PR head (read from a temporary read-only checkout; nothing was executed):',
-      fullFiles,
-      context.truncated ? '\n[file contents truncated]' : '',
-      '',
-      'Write a code review in Markdown. Focus only on the changes above:',
-      '- Correctness bugs, edge cases, and regressions.',
-      '- Security, data-loss, and performance risks.',
-      '- Missing or inadequate tests.',
-      '- Concrete suggestions with file paths and, when possible, hunk context.',
-      'Use sections: Summary, Issues (with severity high/medium/low), Tests, Suggestions.',
-      'If something is uncertain or not visible in the excerpt, say so instead of guessing.',
-      'Do not praise, do not repeat the description, and do not invent code that is not in the diff.',
-      `Respond in ${language}.`,
-    ].join('\n'),
+    prompt: renderPrompt(template, {
+      number: String(pull.number),
+      title: pull.title,
+      source: pull.sourceBranch,
+      target: pull.targetBranch,
+      author: pull.author === '' ? 'unknown' : pull.author,
+      description: description === '' ? '(none)' : description,
+      commitsCount: String(pull.commits.length),
+      commits: commits === '' ? '(none)' : commits,
+      filesCount: `${pull.files.length}${pull.filesTruncated ? '+' : ''}`,
+      diff: `${diff.text === '' ? '(no textual diff)' : diff.text}${diff.truncated ? '\n[diff truncated]' : ''}`,
+      fullFiles: `${fullFiles}${context.truncated ? '\n[file contents truncated]' : ''}`,
+      language,
+    }),
   }
 }
 
@@ -271,7 +258,10 @@ export function createPullAiReviewHandler(
       const language = typeof body.language === 'string' && body.language.toLowerCase().startsWith('zh')
         ? 'Simplified Chinese'
         : 'English'
-      const { prompt, truncated } = buildPrompt(pull, language, reviewContext, budgets.diff)
+      const template = typeof body.prompt === 'string' && body.prompt.trim() !== ''
+          ? body.prompt
+          : defaultPrompt('prReview')
+        const { prompt, truncated } = buildPrompt(pull, language, reviewContext, budgets.diff, template)
       const retryPrompt = `${prompt}\n\nIMPORTANT: A previous attempt exhausted the output budget while reasoning. Output the final review directly now; do not include analysis or thinking.`
       const streaming = body.stream === true
       let streamStarted = false

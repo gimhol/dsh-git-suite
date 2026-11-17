@@ -14,6 +14,7 @@ import { FetchDialog } from './FetchDialog.js'
 import { PushDialog } from './PushDialog.js'
 import { SyncDialog } from './SyncDialog.js'
 import { toast } from './Toast.js'
+import { dshTerminal } from '../terminalBridge.js'
 import { cls } from '../styles.js'
 
 /** `exit 3221225477` / `spawn ENOENT`, the diagnostic a failed launch reports. */
@@ -100,6 +101,13 @@ export function RepoActions({ view, ws, mode, onModeChange, t }: RepoActionsProp
     }
   }
 
+  // Prefer DSH's own terminal plugin; the external app is the fallback.
+  const openTerminal = async (): Promise<void> => {
+    const terminal = dshTerminal()
+    if (terminal !== null && terminal.available() && terminal.open()) return
+    await openApp('terminal')
+  }
+
   // The OS file manager has a different name on every platform.
   const explorerLabel = fileManagerName(t)
   // The PR view only exists for repositories whose remote is a known forge.
@@ -148,7 +156,7 @@ export function RepoActions({ view, ws, mode, onModeChange, t }: RepoActionsProp
         title={t('openTerminal')}
         icon={<TerminalIcon />}
         disabled={path === ''}
-        onClick={() => { void openApp('terminal') }}
+        onClick={() => { void openTerminal() }}
       />
       <Button
         variant="ghost"

@@ -10,10 +10,12 @@ export interface RefsProps {
    * chip can keep the event away from the commit row's own context menu.
    */
   onRefContextMenu?(ref: string, event: React.MouseEvent): boolean
+  /** Tooltip text for one decoration; null leaves that chip silent. */
+  tooltipOf?(ref: string): string | null
 }
 
 /** Branch and tag decorations attached to a commit row. */
-export function Refs({ refs, onRefContextMenu }: RefsProps): React.ReactElement | null {
+export function Refs({ refs, onRefContextMenu, tooltipOf }: RefsProps): React.ReactElement | null {
   if (refs.length === 0) return null
   return (
     <span className={cls('dsh-gitlog-refs')}>
@@ -21,6 +23,7 @@ export function Refs({ refs, onRefContextMenu }: RefsProps): React.ReactElement 
         <span
           key={ref}
           className={cls(`dsh-gitlog-ref${ref.startsWith('HEAD') ? ' is-head' : ''}`)}
+          {...(tooltipOf === undefined ? {} : tooltipProps(() => tooltipOf(ref) ?? ''))}
           onContextMenu={onRefContextMenu === undefined
             ? undefined
             : event => {
@@ -35,5 +38,3 @@ export function Refs({ refs, onRefContextMenu }: RefsProps): React.ReactElement 
     </span>
   )
 }
-
-

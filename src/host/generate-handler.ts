@@ -4,6 +4,7 @@ import { RouteError } from './errors.js'
 import { gitFailure, runGit } from './git.js'
 import { admitHeaders, failure, json } from './http.js'
 import { resolveRepository } from './repository.js'
+import { defaultPrompt, renderPrompt } from './ai-prompts.js'
 import type { RouteContext } from './types.js'
 
 const MAX_BODY_BYTES = 64 * 1024
@@ -12,6 +13,8 @@ const MAX_MESSAGE_CHARS = 4_000
 
 interface GenerateBody {
   path?: unknown
+  /** User prompt template; the built-in text applies when absent. */
+  prompt?: unknown
 }
 
 function header(req: IncomingMessage, name: string): string | null {
@@ -54,23 +57,20 @@ function cleanMessage(raw: string): string {
   return text.slice(0, MAX_MESSAGE_CHARS).trim()
 }
 
-function buildPrompt(files: string[], source: 'staged' | 'unstaged', diff: string, recent: string): string {
+function buildPrompt(
+  files: string[],
+  source: 'staged' | 'unstaged',
+  diff: string,
+  recent: string,
+  template: string,
+): string {
   const truncated = diff.length > MAX_DIFF_CHARS
-  return [
-    'Write a Git commit message for the changes below.',
-    'Reply with only the commit message: no code fences, no quotes, and no explanation.',
-    'Use the imperative mood and a concise subject line; match the repository style.',
-    '',
-    'Recent commit subjects:',
-    recent.trim() === '' ? '(none)' : recent.trim(),
-    '',
-    `Changed files (${source}):`,
-    files.length === 0 ? '(none)' : files.join('\n'),
-    '',
-    `Diff (${source}):`,
-    diff.trim() === '' ? '(no textual diff)' : diff.slice(0, MAX_DIFF_CHARS),
-    truncated ? '\n[diff truncated]' : '',
-  ].join('\n')
+  return renderPrompt(template, {
+    recent: recent.trim() === '' ? '(none)' : recent.trim(),
+    source,
+    files: files.length === 0 ? '(none)' : files.join('\n'),
+    diff: `${diff.trim() === '' ? '(no textual diff)' : diff.slice(0, MAX_DIFF_CHARS)}${truncated ? '\n[diff truncated]' : ''}`,
+  })
 }
 
 /** POST /git-suite/generate-message: summarize the staged (fallback unstaged) diff with the default model. */
@@ -140,7 +140,10 @@ export function createGenerateMessageHandler(
         throw new RouteError(500, 'no-model', 'No default model is configured.')
       }
 
-      const prompt = buildPrompt(files, source, diff, recent)
+      const template = typeof body.prompt === 'string' && body.prompt.trim() !== ''
+        ? body.prompt
+        : defaultPrompt('commitMessage')
+      const prompt = buildPrompt(files, source, diff, recent, template)
       let output = ''
       let finish: LlmStreamChunk['reason']
       try {

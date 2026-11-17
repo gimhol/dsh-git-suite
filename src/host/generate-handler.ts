@@ -3,6 +3,7 @@ import type { AgentDefaultModelService, LlmService, LlmStreamChunk } from './dsh
 import { RouteError } from './errors.js'
 import { gitFailure, runGit } from './git.js'
 import { admitHeaders, failure, json } from './http.js'
+import { annotateLfsPatch } from './lfs.js'
 import { resolveRepository } from './repository.js'
 import { defaultPrompt, renderPrompt } from './ai-prompts.js'
 import type { RouteContext } from './types.js'
@@ -119,7 +120,8 @@ export function createGenerateMessageHandler(
       }
 
       const source: 'staged' | 'unstaged' = staged.trim() === '' ? 'unstaged' : 'staged'
-      const diff = source === 'staged' ? staged : unstaged
+      // LFS pointer rows would otherwise be summarized as if they were the change.
+      const diff = annotateLfsPatch(source === 'staged' ? staged : unstaged)
       const files = status
         .split(/\r?\n/)
         .filter(line => line.trim() !== '')

@@ -1,7 +1,8 @@
 import { readFile } from 'node:fs/promises'
 import { resolve, sep } from 'node:path'
 import { RouteError } from '../errors.js'
-import { gitFailure, runGit, runGitBuffer } from '../git.js'
+import { gitFailure, runGit } from '../git.js'
+import { lfsChangeInSection, pointerFromBytes, readFilteredBlob } from '../lfs.js'
 import { resolveRepository } from '../repository.js'
 import type { RouteContext, WorkspaceDiff, WorkspaceDiffMedia, WorkspaceDiffMediaSide } from '../types.js'
 
@@ -51,13 +52,17 @@ async function mediaSide(mime: string, read: () => Promise<Buffer>): Promise<Wor
     return { dataUrl: null, reason: 'absent' }
   }
   if (bytes.byteLength > MAX_MEDIA_BYTES) return { dataUrl: null, reason: 'large' }
+  // An unfiltered LFS blob is the pointer, not the picture; embedding it would
+  // render a broken image, so report the missing object instead.
+  if (pointerFromBytes(bytes) !== null) return { dataUrl: null, reason: 'lfs' }
   return { dataUrl: `data:${mime};base64,${bytes.toString('base64')}`, reason: null }
 }
 
 /**
  * Describe both sides of an image or audio change: unstaged compares the index
  * with the working tree, staged compares `HEAD` with the index, untracked has no
- * old side.
+ * old side. Git sides go through the checkout filters so LFS payloads arrive
+ * expanded.
  */
 async function readMediaDiff(
   root: string,
@@ -68,7 +73,7 @@ async function readMediaDiff(
   mime: string,
   signal: AbortSignal,
 ): Promise<WorkspaceDiffMedia> {
-  const fromGit = (spec: string) => mediaSide(mime, () => runGitBuffer(root, ['show', spec], signal))
+  const fromGit = (spec: string) => mediaSide(mime, () => readFilteredBlob(root, spec, signal))
   const fromDisk = () => mediaSide(mime, () => readFile(absolute))
   let before: WorkspaceDiffMediaSide
   let after: WorkspaceDiffMediaSide
@@ -130,6 +135,14 @@ export async function readWorkspaceDiff(
         const patch = `Binary files /dev/null and b/${file} differ\n`
         return { ok: true, diff: { path: file, scope, patch, binary: true, truncated: false } }
       }
+      // A skipped-smudge checkout leaves the pointer itself in the working tree.
+      const pointer = pointerFromBytes(content)
+      if (pointer !== null) {
+        return {
+          ok: true,
+          diff: { path: file, scope, patch: '', binary: false, truncated: false, lfs: { before: null, after: pointer } },
+        }
+      }
       const patch = untrackedPatch(file, content.toString('utf8'))
       const truncated = patch.length > MAX_PATCH_CHARS
       return {
@@ -148,6 +161,13 @@ export async function readWorkspaceDiff(
       ? ['diff', '--cached', '--no-color', '--no-ext-diff', '--find-renames', '--unified=3', '--', file]
       : ['diff', '--no-color', '--no-ext-diff', '--find-renames', '--unified=3', '--', file]
     const patch = await runGit(repo.root, args, signal)
+    // An LFS file diffs as its pointer; the pointer lines are not content and
+    // would offer partial staging that corrupts the pointer, so report the
+    // pointer change on its own.
+    const lfs = lfsChangeInSection(patch)
+    if (lfs !== null) {
+      return { ok: true, diff: { path: file, scope, patch: '', binary: false, truncated: false, lfs } }
+    }
     const truncated = patch.length > MAX_PATCH_CHARS
     return {
       ok: true,

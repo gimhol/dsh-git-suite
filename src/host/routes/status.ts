@@ -1,6 +1,7 @@
 import { readFile, stat } from 'node:fs/promises'
 import { resolve, sep } from 'node:path'
 import { gitFailure, runGit } from '../git.js'
+import { lfsTrackedPaths } from '../lfs.js'
 import { parseNumstat, parseWorkspaceStatus } from '../parsers.js'
 import { resolveRepository } from '../repository.js'
 import type { CommitFile, RouteContext, WorkspaceFile, WorkspaceStatus } from '../types.js'
@@ -58,6 +59,9 @@ export async function readWorkspaceStatus(
     const parsed = parseWorkspaceStatus(statusOutput)
     const stagedMap = byPath(parseNumstat(stagedOutput))
     const unstagedMap = byPath(parseNumstat(unstagedOutput))
+    // An LFS-tracked file's numstat counts pointer lines, so the list labels it
+    // instead of showing a misleading +2/-2.
+    const tracked = await lfsTrackedPaths(repo.root, parsed.entries.map(entry => entry.path), signal)
     const staged: WorkspaceFile[] = []
     const unstaged: WorkspaceFile[] = []
 
@@ -65,6 +69,7 @@ export async function readWorkspaceStatus(
       const base = {
         path: entry.path,
         ...(entry.origPath === null ? {} : { origPath: entry.origPath }),
+        ...(tracked.has(entry.path) ? { lfs: true } : {}),
       }
       // Unmerged paths only belong to the unstaged list: their index entry is a
       // conflict marker, not a staged change.

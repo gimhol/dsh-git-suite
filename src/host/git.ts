@@ -78,6 +78,47 @@ export function runGitBuffer(cwd: string, args: readonly string[], signal?: Abor
   })
 }
 
+/**
+ * Run one git command with text on stdin and raw stdout, for bulk object reads
+ * such as `git cat-file --batch`, where the reply interleaves headers and blobs.
+ */
+export function runGitBufferWithInput(
+  cwd: string,
+  args: readonly string[],
+  input: string,
+  signal?: AbortSignal,
+  timeoutMs = GIT_TIMEOUT_MS,
+): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const child = spawn('git', ['--no-pager', '-c', 'core.quotepath=false', '-C', cwd, ...args], {
+      cwd,
+      env: gitEnvironment(),
+      windowsHide: true,
+      signal,
+    })
+    const chunks: Buffer[] = []
+    let stderr = ''
+    const timer = setTimeout(() => {
+      child.kill()
+      reject(Object.assign(new Error('git timed out'), { code: 'ETIMEDOUT', stderr }))
+    }, timeoutMs)
+    child.stdout.on('data', (chunk: Buffer) => { chunks.push(chunk) })
+    child.stderr.setEncoding('utf8')
+    child.stderr.on('data', (chunk: string) => { stderr += chunk })
+    child.on('error', error => {
+      clearTimeout(timer)
+      reject(Object.assign(error, { stderr }))
+    })
+    child.on('close', code => {
+      clearTimeout(timer)
+      const stdout = Buffer.concat(chunks)
+      if (code === 0) resolve(stdout)
+      else reject(Object.assign(new Error('git failed'), { code: code ?? 1, stdout, stderr }))
+    })
+    child.stdin.end(input)
+  })
+}
+
 /** Map a raw git failure onto the route's user-facing error vocabulary. */
 export function gitFailure(error: unknown): RouteError {
   const failed = (error ?? {}) as GitExecError
@@ -99,6 +140,11 @@ export function gitFailure(error: unknown): RouteError {
   if (/does not have any commits yet|has no commits yet/i.test(stderr)) {
     return new RouteError(400, 'empty-repo', 'This repository does not have any commits yet.', { detail })
   }
+  // Git LFS failures (missing git-lfs, a missing object, a quota error, or a
+  // remote rejecting LFS uploads) otherwise arrive as a wall of filter output.
+  if (/smudge filter|external filter '[^']*lfs|git-lfs|Error downloading object|Smudge error|batch response|data quota|LFS pointer|missing LFS object|GH008/i.test(stderr)) {
+    return new RouteError(409, 'lfs-failed', 'Git LFS could not complete this operation: check that git-lfs is installed and set up in this repository (git lfs install), its objects are downloaded, and the remote accepts LFS uploads.', { detail })
+  }
   if (/bad revision|unknown revision|ambiguous argument/i.test(stderr)) {
     return new RouteError(400, 'bad-commit', 'That commit could not be resolved in this repository.', { detail })
   }
@@ -111,8 +157,7 @@ export function gitFailure(error: unknown): RouteError {
   return new RouteError(500, 'git-failed', detail, { detail })
 }
 
-/** Run one git command with text on stdin (used for `git credential approve`). */
-export function runGitWithInput(
+/** Run one git command with text on stdin (used for `git credential approve`). */export function runGitWithInput(
   cwd: string,
   args: readonly string[],
   input: string,

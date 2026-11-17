@@ -9,6 +9,7 @@ import { useSplitSize } from '../lib/use-split-size.js'
 import { tooltipProps } from './Tooltip.js'
 import { Refs } from './Refs.js'
 import { DiffView } from './DiffView.js'
+import { LfsDiff } from './LfsDiff.js'
 import { Spinner } from './States.js'
 import { ExpandIcon, SplitDiffIcon, UnifiedDiffIcon } from './GitLogIcon.js'
 import { DiffDialog } from './DiffDialog.js'
@@ -102,6 +103,8 @@ export function DetailPane({ detail, status, error, t, refTooltipOf }: DetailPan
   const selectedFile = fileChoice.hash === detail.hash ? fileChoice.index : 0
   const activeFile = detail.files[selectedFile]
   const activeSection = sections[selectedFile]
+  /** Set when the selected file is stored in Git LFS: the patch is only its pointer. */
+  const activeLfs = activeFile?.lfs
 
   const innerStyle: React.CSSProperties = {
     gridTemplateColumns: `${info.size * 100}% 6px minmax(0, 1fr)`,
@@ -161,10 +164,12 @@ export function DetailPane({ detail, status, error, t, refTooltipOf }: DetailPan
                         onClick={() => setFileChoice({ hash: detail.hash, index })}
                       >
                         <span className={cls('dsh-gitlog-file-path')}>{file.path}</span>
-                        {file.binary
-                          ? <span className={cls('dsh-gitlog-binary')}>{t('binary')}</span>
-                          : <span className={cls('dsh-gitlog-add')}>{`+${file.additions ?? 0}`}</span>}
-                        {file.binary ? <span /> : <span className={cls('dsh-gitlog-del')}>{`-${file.deletions ?? 0}`}</span>}
+                        {file.lfs !== undefined
+                          ? <span className={cls('dsh-gitlog-lfs')}>{t('lfsBadge')}</span>
+                          : file.binary
+                            ? <span className={cls('dsh-gitlog-binary')}>{t('binary')}</span>
+                            : <span className={cls('dsh-gitlog-add')}>{`+${file.additions ?? 0}`}</span>}
+                        {file.lfs !== undefined || file.binary ? <span /> : <span className={cls('dsh-gitlog-del')}>{`-${file.deletions ?? 0}`}</span>}
                       </button>
                     </li>
                   ))}
@@ -185,7 +190,7 @@ export function DetailPane({ detail, status, error, t, refTooltipOf }: DetailPan
             ? <code className={cls('dsh-gitlog-patch-file')} {...tooltipProps(activeFile.path)}>{activeFile.path}</code>
             : null}
           <span className={cls('dsh-gitlog-diff-actions')}>
-            {activeSection === undefined
+            {activeSection === undefined || activeLfs !== undefined
               ? null
               : (
                   <button
@@ -211,23 +216,25 @@ export function DetailPane({ detail, status, error, t, refTooltipOf }: DetailPan
         </div>
         {detail.files.length === 0
           ? <p className={cls('dsh-gitlog-note')}>{t('noPatch')}</p>
-          : activeSection !== undefined
-            ? (
-                <DiffView
-                  key={`${detail.hash}:${selectedFile}`}
-                  patch={activeSection}
-                  t={t}
-                  path={detail.files[selectedFile]?.path}
-                  empty={t('fileNoPatch')}
-                  mode={diffMode.mode}
-                />
-              )
-            : <p className={cls('dsh-gitlog-note')}>{detail.patchTruncated ? t('patchTruncated') : t('fileNoPatch')}</p>}
+          : activeLfs !== undefined
+            ? <LfsDiff lfs={activeLfs} path={activeFile?.path} t={t} />
+            : activeSection !== undefined
+              ? (
+                  <DiffView
+                    key={`${detail.hash}:${selectedFile}`}
+                    patch={activeSection}
+                    t={t}
+                    path={detail.files[selectedFile]?.path}
+                    empty={t('fileNoPatch')}
+                    mode={diffMode.mode}
+                  />
+                )
+              : <p className={cls('dsh-gitlog-note')}>{detail.patchTruncated ? t('patchTruncated') : t('fileNoPatch')}</p>}
         {detail.patchTruncated && activeSection !== undefined
           ? <p className={cls('dsh-gitlog-note')}>{t('patchTruncated')}</p>
           : null}
       </div>
-      {diffDialogOpen && activeSection !== undefined
+      {diffDialogOpen && activeSection !== undefined && activeLfs === undefined
         ? (
             <DiffDialog
               path={detail.files[selectedFile]?.path ?? ''}

@@ -33,6 +33,7 @@ src/
     repository.ts
     scan.ts
     parsers.ts
+    lfs.ts
     types.ts
     dsh.ts
     errors.ts
@@ -82,6 +83,7 @@ src/
       FetchDialog.tsx
       GitLogIcon.tsx
       IgnoreFileDialog.tsx
+      LfsDiff.tsx
       PanelControls.tsx
       PushDialog.tsx
       Refs.tsx
@@ -136,7 +138,7 @@ LICENSE
 | `host/index.ts` | 注册 `/git-suite` 只读资源路由，以及 switch / action / clone / generate-message / pick-directory / tag / branch / checkout / sync / remote / branch-action / credential / pr / pr-close / pr-reopen / pr-create / pr-merge / pr-ai-review / pr-gitee-decision / pr-delete POST handler |
 | `host/resource.ts` | 校验请求、按 `mode` 分发只读请求并统一错误响应 |
 | `host/switch-handler.ts` | 分支切换的 Node handler（DSH resource 路由只接受 GET/HEAD；POST 必须走 handler） |
-| `host/workspace-action.ts` | POST `/git-suite/action`：暂存/取消暂存、按 hunk 或按选中行暂存/取消暂存（`stage-hunks` / `unstage-hunks` / `stage-lines` / `unstage-lines`，由 `host/patch.ts` 组装补丁后 `git apply --cached [--reverse] --recount --unidiff-zero`）、重置单个文件的未暂存改动（`checkout --`）、删除单个未跟踪文件、提交（可 amend）、可选 push 的 Node handler |
+| `host/workspace-action.ts` | POST `/git-suite/action`：暂存/取消暂存、按 hunk 或按选中行暂存/取消暂存（`stage-hunks` / `unstage-hunks` / `stage-lines` / `unstage-lines`，由 `host/patch.ts` 组装补丁后 `git apply --cached [--reverse] --recount --unidiff-zero`）、重置单个文件的未暂存改动（`checkout --`）、删除单个未跟踪文件、提交（可 amend）、可选 push 的 Node handler；LFS 指针文件只允许整文件暂存（按块/按行返回 `409 lfs-file`），避免把指针改坏 |
 | `host/clone-handler.ts` | POST `/git-suite/clone`：校验远端 URL 与目标目录后，先克隆到目标同级的临时目录，成功后改名到目标目录 |
 | `host/commit-actions.ts` | POST `/git-suite/tag`、`/branch`、`/checkout`：校验标签/分支名，创建标签/分支（可指定提交或任意引用作为起点），检出本地分支、指定提交或任意引用（分离 HEAD，不 force） |
 | `host/commit-ops.ts` | `POST /git-suite/commit-op`：拣选或反向提交单个提交、把当前分支重置到某提交（soft/mixed/hard）、对停住的 merge/rebase/cherry-pick/revert 执行 继续/跳过/中止（`409 operation-conflict` 会说明是哪种操作）、用 `--ours`/`--theirs` 解决单个冲突文件 |
@@ -144,7 +146,7 @@ LICENSE
 | `host/routes/reflog.ts` | `mode=reflog`：最近 80 次 HEAD 变动（哈希、selector、动作、作者、时间），用于找回丢失的提交 |
 | `host/routes/session-repo.ts` | `mode=session-repo&session=…`：某个 Session 工作目录所属的 Git 仓库（从 Host `sessions` 存储读取其 `header.cwd`）；Session 不存在或其目录不在仓库内时返回 `path: null` |
 | `host/stash-handler.ts` | `POST /git-suite/stash`：`save`（`stash push`，可选 `--include-untracked` 与 `-m`）、`apply`、`pop`、`drop`；只接受 `stash@{n}` 形式的引用 |
-| `host/generate-handler.ts` | POST `/git-suite/generate-message`：读取 staged/unstaged diff，调用 `ctx.llm`（默认模型）生成提交信息 |
+| `host/generate-handler.ts` | POST `/git-suite/generate-message`：读取 staged/unstaged diff，调用 `ctx.llm`（默认模型）生成提交信息；发送前用 `annotateLfsPatch` 把 LFS 指针段换成「对象 id + 大小」说明 |
 | `host/pick-handler.ts` | POST `/git-suite/pick-directory`：调用 `ctx.directoryPicker` 的原生选择器；`mode: 'repo'`（默认）解析 Git 根并检查 DSH 工作区，`mode: 'directory'` 返回普通目录供克隆目标使用 |
 | `host/sync-handler.ts` | `POST /git-suite/sync`：`fetch` 支持 `fetchAll`/`prune`/`tags`/`forceTags`（对应 `--all`/`--prune`/`--tags`/`--force`），也可只获取指定 `remote`；`pull` 按所选 `remote`/`branch` 拉取：当前分支走 `git pull`，非当前分支只把该分支快进到抓取到的提交（不动工作区），无法快进返回 `409 diverged`，该分支被其它 worktree 占用返回 `409 branch-checked-out`；`push` 按 `refs`（本地分支→远程分支，可逐项 `track`）推送，支持单个标签（`tagRefs`）、全部标签（`tags`）与 `force`；`fetch-tag` 用远端覆盖单个本地标签；认证失败返回 `401 auth-required`，附带远端名、URL 协议与已配置的凭据助手 |
 | `host/remote-handler.ts` | `POST /git-suite/remote`：新增（`action: 'add'`）、改名和/或修改地址（`action: 'set-url'`）或删除（`action: 'remove'`）指定远端，会校验名称、地址格式以及是否已存在 |
@@ -152,7 +154,7 @@ LICENSE
 | `host/dsh.ts` | 本插件使用的 DSH host 类型，包括 `webServer`、工作区、`directoryPicker`、`llm` 与 `agentDefaultModel` |
 | `host/http.ts` | JSON 响应、错误序列化、同源与私有头校验；`readJsonBody`（Content-Length/实际字节上限）与 `sendResponse`（已关闭响应保护） |
 | `host/forge-post.ts` | 写操作路由公共流程：私有头、POST、body 上限、超时、repository/remote/forge/token 解析与错误回写 |
-| `host/git.ts` | 执行只读 git 命令并把失败映射为错误码 |
+| `host/git.ts` | 执行只读 git 命令并把失败映射为错误码；LFS 失败（smudge/clean 过滤器、缺少对象、配额、远端拒绝 LFS 上传）单独映射为 `409 lfs-failed` |
 | `host/repository.ts` | 校验路径并用 `rev-parse` 解析仓库根目录 |
 | `host/remote-url.ts` | 接受 https/ssh/git/file 与绝对本地路径，拒绝 `ext::` 之类的命令型传输 |
 | `host/reveal-handler.ts` | `POST /git-suite/reveal`：校验路径在仓库内、文件存在，然后在系统文件浏览器中选中该文件 |
@@ -173,9 +175,10 @@ LICENSE
 | `host/pr-review-context.ts` | 按用户选择读取完整文件：临时 worktree（不执行代码，随即清理）、平台 contents API 或仅 diff；限制文件数/单文件/总字符数 |
 | `host/scan.ts` | 有界扫描工作区中的 Git 项目 |
 | `host/parsers.ts` | 解析 log、commit header、numstat 和 ref |
+| `host/lfs.ts` | Git LFS 指针处理：解析指针文件、逐 hunk 还原变更前后的指针、经 smudge 过滤器（`git cat-file --filters`）读取对象、用 `git check-attr` 判断路径是否由 LFS 存储、用 `cat-file --batch-check` + `--batch` 只为指针大小的 blob 找指针（二进制 LFS 文件也认得出），以及把 prompt 里的指针段换成对象说明（`annotateLfsPatch`） |
 | `host/routes/` | 分支、引用树、日志分页、提交详情、文件状态/diff 读取，以及本地分支切换 |
-| `host/routes/status.ts` | `git status --porcelain=v2` + staged/unstaged numstat：已暂存/未暂存文件、分支/上游/ahead/behind 与作者 |
-| `host/routes/workspace-diff.ts` | 单文件 staged/unstaged diff；未跟踪文件合成新增补丁 |
+| `host/routes/status.ts` | `git status --porcelain=v2` + staged/unstaged numstat：已暂存/未暂存文件、分支/上游/ahead/behind 与作者；LFS 跟踪的路径带 `lfs` 标记（`git check-attr`），列表显示 LFS 而不是指针行数 |
+| `host/routes/workspace-diff.ts` | 单文件 staged/unstaged diff；未跟踪文件合成新增补丁；图片/音频两侧经 smudge 过滤器读取（本地缺少 LFS 对象时给出原因），LFS 文件只上报指针变化（`lfs`），不提供按块/按行暂存 |
 | `host/routes/switch.ts` | 双击本地分支时执行 `git switch`（POST、仅本地分支、不 force） |
 | `host/routes/tag.ts` | `mode=tag`：单个标签指向的提交、短哈希、标题、附注说明，以及是否为附注标签 |
 | `host/routes/tag-status.ts` | `mode=tag-status`：把本地标签与某个远端比较（`ls-remote --tags`，附注标签解析到提交），给出 相同/不同/仅本地 与仅远端的标签名 |

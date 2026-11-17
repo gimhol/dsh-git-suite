@@ -1,3 +1,18 @@
+/** A byte count in the largest binary unit that keeps it readable, as in `1.2 MB`. */
+export function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 0) return String(bytes)
+  if (bytes < 1024) return `${Math.round(bytes)} B`
+  const units = ['KB', 'MB', 'GB', 'TB'] as const
+  let value = bytes / 1024
+  let unit = 0
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024
+    unit += 1
+  }
+  const text = value >= 10 ? String(Math.round(value)) : value.toFixed(1).replace(/\.0$/, '')
+  return `${text} ${units[unit]}`
+}
+
 /**
  * Absolute date and time down to the second, in the plugin's own UI language.
  * Chinese reads `2026-10-25 03:10:45`; other locales spell the month

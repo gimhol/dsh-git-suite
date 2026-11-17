@@ -6,6 +6,7 @@ import { isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { RouteError } from './errors.js'
 import { gitFailure, runGit } from './git.js'
 import { admitHeaders, failure, json } from './http.js'
+import { lfsChangeInSection } from './lfs.js'
 import { buildLinePatch, selectHunks } from './patch.js'
 import { resolveRepository } from './repository.js'
 import type { RouteContext, WorkspaceCommit } from './types.js'
@@ -168,6 +169,11 @@ export function createWorkspaceActionHandler(context: RouteContext): (req: Incom
         } catch (error) {
           throw gitFailure(error)
         }
+        // Applying one pointer line would leave an index blob that is not a valid
+        // pointer, so an LFS file is only ever staged or unstaged as a whole.
+        if (lfsChangeInSection(diff) !== null) {
+          throw new RouteError(409, 'lfs-file', 'This file is stored in Git LFS; stage or unstage the whole file.', { file: rel })
+        }
         const patch = buildLinePatch(diff, lines)
         if (patch === null) {
           throw new RouteError(404, 'no-lines', 'Those lines cannot be applied on their own.', { file: rel })
@@ -211,6 +217,9 @@ export function createWorkspaceActionHandler(context: RouteContext): (req: Incom
           )
         } catch (error) {
           throw gitFailure(error)
+        }
+        if (lfsChangeInSection(diff) !== null) {
+          throw new RouteError(409, 'lfs-file', 'This file is stored in Git LFS; stage or unstage the whole file.', { file: rel })
         }
         const patch = selectHunks(diff, hunks)
         if (patch === null) {

@@ -33,6 +33,7 @@ src/
     repository.ts
     scan.ts
     parsers.ts
+    lfs.ts
     types.ts
     dsh.ts
     errors.ts
@@ -82,6 +83,7 @@ src/
       FetchDialog.tsx
       GitLogIcon.tsx
       IgnoreFileDialog.tsx
+      LfsDiff.tsx
       PanelControls.tsx
       PushDialog.tsx
       Refs.tsx
@@ -136,7 +138,7 @@ LICENSE
 | `host/index.ts` | Registers the read-only `/git-suite` route and the POST handlers for switch, actions, clone, message generation, directory picking, tag, branch, checkout, sync, remote, branch actions, credentials, pull-request checkout, close, reopen, creation, merge, AI review, Gitee approvals, and deletion |
 | `host/resource.ts` | Admits requests, dispatches read modes, and maps errors to responses |
 | `host/switch-handler.ts` | Node handler for branch switching (DSH resource routes are GET/HEAD only; a POST needs a handler) |
-| `host/workspace-action.ts` | Node handler for stage/unstage, stage or unstage individual hunks or selected lines (`stage-hunks` / `unstage-hunks` / `stage-lines` / `unstage-lines` via `git apply --cached [--reverse] --recount --unidiff-zero` on a patch built by `host/patch.ts`), discard one file's unstaged changes (`checkout --`), delete one untracked file, append an ignore pattern to `.gitignore`, commit (optionally amend), and the optional push |
+| `host/workspace-action.ts` | Node handler for stage/unstage, stage or unstage individual hunks or selected lines (`stage-hunks` / `unstage-hunks` / `stage-lines` / `unstage-lines` via `git apply --cached [--reverse] --recount --unidiff-zero` on a patch built by `host/patch.ts`), discard one file's unstaged changes (`checkout --`), delete one untracked file, append an ignore pattern to `.gitignore`, commit (optionally amend), and the optional push; LFS pointer files stage only as a whole (`409 lfs-file` for hunk/line staging), so a pointer cannot be corrupted |
 | `host/clone-handler.ts` | Node handler that validates the remote URL and destination, clones into a staging directory beside the destination, and renames it into place |
 | `host/commit-actions.ts` | Validates names, creates tags and branches (at a commit hash or a ref), and checks out a local branch, a commit hash, or any ref as a detached HEAD (never forced) |
 | `host/commit-ops.ts` | `POST /git-suite/commit-op`: cherry-pick or revert one commit, reset the current branch (soft/mixed/hard) to a commit, continue/skip/abort a stopped merge/rebase/cherry-pick/revert (`409 operation-conflict` reports which operation is pending), and resolve one unmerged file with `--ours`/`--theirs` |
@@ -144,7 +146,7 @@ LICENSE
 | `host/routes/reflog.ts` | `mode=reflog`: the last 80 HEAD movements (hash, selector, action, author, date) for recovering lost commits |
 | `host/routes/session-repo.ts` | `mode=session-repo&session=…`: the Git repository of one Session's working directory (read from the Host `sessions` store), or `path: null` when the host has no such Session or its directory is not inside a repository |
 | `host/stash-handler.ts` | `POST /git-suite/stash`: `save` (`stash push`, optional `--include-untracked` and `-m`), `apply`, `pop`, `drop`; only `stash@{n}` refs are accepted |
-| `host/generate-handler.ts` | Node handler that reads the staged/unstaged diff and calls `ctx.llm` with the default model |
+| `host/generate-handler.ts` | Node handler that reads the staged/unstaged diff (LFS pointer sections replaced by an object id/size note via `annotateLfsPatch`) and calls `ctx.llm` with the default model |
 | `host/pick-handler.ts` | Opens the native `ctx.directoryPicker`; `mode: 'repo'` (default) resolves the Git root and checks the DSH workspace, while `mode: 'directory'` returns a plain directory for clone destinations |
 | `host/sync-handler.ts` | `POST /git-suite/sync`: fetch supports fetchAll/prune/tags/forceTags (or one remote), pull a chosen remote branch (the checked-out one runs `git pull`; any other branch is fast-forwarded to its fetched tip without touching the worktree, `409 diverged` when it cannot, `409 branch-checked-out` when another worktree holds it), push per-ref local→remote mappings with optional tracking, single tags (`tagRefs`), all tags, and force; `fetch-tag` force-replaces one local tag from the remote; an authentication failure becomes `401 auth-required` annotated with the remote, its URL scheme, and the configured credential helper |
 | `host/remote-handler.ts` | `POST /git-suite/remote`: add (`action: 'add'`), rename and/or replace the URL (`action: 'set-url'`), or remove (`action: 'remove'`) one configured remote after validating the names, the URL, and whether they already exist |
@@ -152,7 +154,7 @@ LICENSE
 | `host/dsh.ts` | Local DSH host types, including `webServer`, workspaces, `directoryPicker`, `llm`, and `agentDefaultModel` |
 | `host/http.ts` | JSON responses, error serialization, same-origin and private-header checks; `readJsonBody` (declared/actual size limits) and `sendResponse` (closed-response guard) |
 | `host/forge-post.ts` | Shared forge-write flow: private header, POST, body limit, timeout, repository/remote/forge/token resolution, and error response |
-| `host/git.ts` | Runs read-only git commands and maps failures to error codes |
+| `host/git.ts` | Runs read-only git commands and maps failures to error codes; LFS failures (smudge/clean filters, missing objects, quota, a remote refusing LFS uploads) map to `409 lfs-failed` |
 | `host/repository.ts` | Validates paths and resolves the repository root with `rev-parse` |
 | `host/remote-url.ts` | Accepts https/ssh/git/file and absolute local remotes; rejects `ext::`-style transports |
 | `host/reveal-handler.ts` | `POST /git-suite/reveal`: keeps the path inside the repository, reports `file-missing`, and opens the OS file browser with the file selected |
@@ -173,9 +175,10 @@ LICENSE
 | `host/pr-review-context.ts` | Reads complete files in the chosen mode: temporary worktree (no execution, removed immediately), forge contents API, or diff only; caps file count, per-file size, and total characters |
 | `host/scan.ts` | Scans workspaces for Git projects with depth and entry limits |
 | `host/parsers.ts` | Parses log output, commit headers, numstat, and refs |
+| `host/lfs.ts` | Git LFS pointers: parses pointer files, rebuilds the before/after pointers of a hunk, and reads objects through the smudge filter (`git cat-file --filters`), so an LFS file is reported as an object id/size change instead of three lines of pointer text; also reads `git check-attr` for tracked paths and finds pointers through `cat-file --batch-check` + `--batch` (which covers binary-attribute LFS files), and swaps pointer sections in prompts for an object note (`annotateLfsPatch`) |
 | `host/routes/` | Readers for branches, the refs tree, paged log, commit detail, working-tree status/diff, plus local branch switching |
-| `host/routes/status.ts` | Working-tree status: staged/unstaged files, branch/upstream/ahead/behind, and the Git author |
-| `host/routes/workspace-diff.ts` | Per-file staged/unstaged diff; synthesizes an added-file patch for untracked files |
+| `host/routes/status.ts` | Working-tree status: staged/unstaged files, branch/upstream/ahead/behind, and the Git author; LFS-tracked paths carry an `lfs` flag (`git check-attr`) so the list shows LFS instead of pointer line counts |
+| `host/routes/workspace-diff.ts` | Per-file staged/unstaged diff; synthesizes an added-file patch for untracked files; reads both image/audio sides through the smudge filter (reporting a reason when the LFS object is missing) and reports LFS files as a pointer change (`lfs`) with no hunk/line staging |
 | `host/routes/switch.ts` | Runs `git switch` for a local-branch double-click (POST, local-only, never forced) |
 | `host/routes/tag.ts` | `mode=tag`: one tag's commit, short hash, subject, annotation message, and whether it is annotated |
 | `host/routes/tag-status.ts` | `mode=tag-status`: compares local tags with one remote (`ls-remote --tags`, annotated tags peeled to commits) and reports same/different/local-only plus remote-only names |

@@ -1855,6 +1855,65 @@ $brand: var(--dsw-alias-brand-primary);
     font-family: inherit;
   }
 
+  // Git LFS: a file list tag, and the pointer summary that replaces its patch.
+  &-lfs {
+    color: $label-secondary;
+    font-family: inherit;
+    letter-spacing: 0.02em;
+  }
+
+  &-lfs-diff {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+    padding: 12px;
+    overflow: auto;
+  }
+
+  &-lfs-note {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: $label-secondary;
+  }
+
+  &-lfs-badge {
+    flex: none;
+    padding: 1px 6px;
+    border: 1px solid $border-l1;
+    border-radius: 4px;
+    color: $label-primary;
+    font-family: var(--gitlog-mono);
+    font-size: $font-tiny;
+  }
+
+  &-lfs-path {
+    overflow-wrap: anywhere;
+    color: $label-primary;
+    font-family: var(--gitlog-mono);
+  }
+
+  &-lfs-sides {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 4px 12px;
+    margin: 0;
+    font-family: var(--gitlog-mono);
+    font-size: $font-tiny;
+  }
+
+  &-lfs-sides > dt {
+    color: $label-secondary;
+  }
+
+  &-lfs-sides > dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+
   // Unified diff: sticky two-column gutter, coloured rows, incremental render.
   &-diff {
     display: flex;

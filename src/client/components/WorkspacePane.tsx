@@ -15,6 +15,7 @@ import { toast } from './Toast.js'
 import { hideTooltip, showTooltip, tooltipProps } from './Tooltip.js'
 import { DiffView } from './DiffView.js'
 import { MediaDiff } from './MediaDiff.js'
+import { LfsDiff } from './LfsDiff.js'
 import { FileActionDialog } from './FileActionDialog.js'
 import { CommitReviewDialog } from './CommitReviewDialog.js'
 import { DiffDialog } from './DiffDialog.js'
@@ -48,6 +49,12 @@ function statusTone(status: string): string {
     default:
       return ''
   }
+}
+
+/** A failed partial-stage attempt; an LFS pointer file explains why it must be whole. */
+function partialStageMessage(error: unknown, t: Translate): string {
+  const failure = toApiError(error)
+  return failure.code === 'lfs-file' ? t('lfsStageWhole') : failure.message
 }
 
 /** Working-tree panel: staged/unstaged files, per-file diff, and the commit form. */
@@ -191,7 +198,7 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
       ws.refresh()
       toast(action === 'unstage-lines' ? t('linesUnstaged') : t('linesStaged'))
     } catch (error) {
-      toast(toApiError(error).message, 'error')
+      toast(partialStageMessage(error, t), 'error')
     } finally {
       setLineBusy(false)
     }
@@ -209,7 +216,7 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
       ws.refresh()
       toast(action === 'unstage-hunks' ? t('hunkUnstaged') : t('hunkStaged'))
     } catch (error) {
-      toast(toApiError(error).message, 'error')
+      toast(partialStageMessage(error, t), 'error')
     } finally {
       setHunkBusy(false)
     }
@@ -385,14 +392,16 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
         <span className={cls('dsh-gitlog-workspace-path')}>
           {file.path}
         </span>
-        {file.binary
-          ? <span className={cls('dsh-gitlog-binary')}>{t('binary')}</span>
-          : (
-              <span className={cls('dsh-gitlog-workspace-stats')}>
-                {file.additions === null ? null : <span className={cls('dsh-gitlog-add')}>{`+${file.additions}`}</span>}
-                {file.deletions === null ? null : <span className={cls('dsh-gitlog-del')}>{`-${file.deletions}`}</span>}
-              </span>
-            )}
+        {file.lfs === true
+          ? <span className={cls('dsh-gitlog-lfs')}>{t('lfsBadge')}</span>
+          : file.binary
+            ? <span className={cls('dsh-gitlog-binary')}>{t('binary')}</span>
+            : (
+                <span className={cls('dsh-gitlog-workspace-stats')}>
+                  {file.additions === null ? null : <span className={cls('dsh-gitlog-add')}>{`+${file.additions}`}</span>}
+                  {file.deletions === null ? null : <span className={cls('dsh-gitlog-del')}>{`-${file.deletions}`}</span>}
+                </span>
+              )}
         <button
           type="button"
           className={cls('dsh-gitlog-workspace-file-action')}
@@ -659,6 +668,13 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
       ? t('untracked')
       : t('unstaged')
 
+  // The selection carries only path and scope; the list entry says whether LFS
+  // stores that path, which decides how a binary diff is explained.
+  const selectedEntry = ws.selected === null || status === null
+    ? undefined
+    : (ws.selected.scope === 'staged' ? status.staged : status.unstaged)
+        .find(file => file.path === ws.selected?.path)
+
   const diffPane = (
     <div className={cls('dsh-gitlog-workspace-diff')}>
       <div className={cls('dsh-gitlog-workspace-diff-head')}>
@@ -704,8 +720,18 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
                       <MediaDiff media={ws.diff.media} path={ws.selected?.path ?? ''} t={t} />
                     </div>
                   )
+                : ws.diff.lfs !== undefined
+                ? (
+                    <div className={cls('dsh-gitlog-workspace-diff-body')}>
+                      <LfsDiff lfs={ws.diff.lfs} path={ws.selected?.path} t={t} />
+                    </div>
+                  )
                 : ws.diff.binary
-                ? <p className={cls('dsh-gitlog-workspace-empty')}>{t('binary')}</p>
+                ? (
+                    <p className={cls('dsh-gitlog-workspace-empty')}>
+                      {selectedEntry?.lfs === true ? t('lfsBinary') : t('binary')}
+                    </p>
+                  )
                 : (
                     <div className={cls('dsh-gitlog-workspace-diff-body')}>
                       <DiffView

@@ -2,6 +2,7 @@ node_modules/
 .pnpm-store/
 .npm-cache/
 dist/
+temp/
 src/client/styles.generated.css
 *.log
 .DS_Store

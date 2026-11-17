@@ -9,6 +9,7 @@ import type { AgentDefaultModelService, LlmService, LlmStreamChunk } from './dsh
 import { RouteError } from './errors.js'
 import { gitFailure, runGit } from './git.js'
 import { admitHeaders, failure, json } from './http.js'
+import { annotateLfsPatch } from './lfs.js'
 import { resolveRepository } from './repository.js'
 import { defaultPrompt, renderPrompt } from './ai-prompts.js'
 import type { RouteContext } from './types.js'
@@ -169,7 +170,10 @@ export function createPullDraftHandler(
       const language = typeof body.language === 'string' && body.language.toLowerCase().startsWith('zh')
         ? 'Simplified Chinese'
         : 'English'
-      const truncated = diff.length > MAX_DIFF_CHARS
+      // Pointer rows say nothing about the change under review, so the prompt
+      // names the LFS object instead.
+      const promptDiff = annotateLfsPatch(diff)
+      const truncated = promptDiff.length > MAX_DIFF_CHARS
       const template = typeof body.prompt === 'string' && body.prompt.trim() !== ''
         ? body.prompt
         : defaultPrompt('prDraft')
@@ -177,7 +181,7 @@ export function createPullDraftHandler(
         head,
         base,
         commits.slice(0, MAX_LOG_CHARS),
-        diff,
+        promptDiff,
         truncated,
         language,
         template,

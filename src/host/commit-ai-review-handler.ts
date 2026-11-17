@@ -13,6 +13,7 @@ import { readStagedReview, writeStagedReview } from './staged-review-cache.js'
 import { runGit } from './git.js'
 import { defaultPrompt, renderPrompt } from './ai-prompts.js'
 import { admitHeaders, json } from './http.js'
+import { annotateLfsPatch } from './lfs.js'
 import { resolveRepository } from './repository.js'
 import type { RouteContext } from './types.js'
 
@@ -126,7 +127,9 @@ export function createCommitAiReviewHandler(
       // so a cached review can never describe a different staged diff.
       const hash = createHash('sha256').update(patch).digest('hex')
       const truncated = patch.length > MAX_DIFF_CHARS
-      const diff = truncated ? patch.slice(0, MAX_DIFF_CHARS) : patch
+      // The cache key stays the raw patch; only the prompt gets pointer sections
+      // replaced, so the model reviews the change rather than `oid sha256` rows.
+      const diff = annotateLfsPatch(truncated ? patch.slice(0, MAX_DIFF_CHARS) : patch)
 
       const streaming = body.stream === true
       let streamStarted = false

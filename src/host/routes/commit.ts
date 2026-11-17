@@ -1,5 +1,6 @@
 import { RouteError } from '../errors.js'
 import { gitFailure, runGit } from '../git.js'
+import { lfsChangeInSection, pointersForSpecs, splitPatchSections } from '../lfs.js'
 import { parseCommitHeader, parseNumstat } from '../parsers.js'
 import { resolveRepository } from '../repository.js'
 import type { CommitDetail, RouteContext } from '../types.js'
@@ -58,6 +59,32 @@ export async function readCommit(context: RouteContext, url: URL, signal: AbortS
 
     const commit = parseCommitHeader(headerOutput)
     const files = parseNumstat(numstatOutput)
+    // A file stored in Git LFS diffs as its pointer; mark those entries so the
+    // client can describe the pointer change instead of showing three text lines.
+    const sections = splitPatchSections(patchOutput)
+    for (const [index, file] of files.entries()) {
+      const section = sections[index]
+      if (section === undefined) continue
+      const lfs = lfsChangeInSection(section)
+      if (lfs !== null) file.lfs = lfs
+    }
+    // A binary-attribute LFS file has no pointer rows in its patch, so read the
+    // blob only when it is pointer-sized; a real binary is never read.
+    const unmarked = files.filter(file => file.binary && file.lfs === undefined && !file.path.includes(':'))
+    if (unmarked.length > 0) {
+      const parent = commit.parents[0]
+      const specs: string[] = []
+      for (const file of unmarked) {
+        specs.push(`${hash}:${file.path}`)
+        if (parent !== undefined) specs.push(`${parent}:${file.path}`)
+      }
+      const pointers = await pointersForSpecs(repo.root, specs, signal)
+      for (const file of unmarked) {
+        const after = pointers.get(`${hash}:${file.path}`) ?? null
+        const before = parent === undefined ? null : pointers.get(`${parent}:${file.path}`) ?? null
+        if (after !== null || before !== null) file.lfs = { before, after }
+      }
+    }
     const patchTruncated = patchOutput.length > MAX_PATCH_CHARS
     return {
       ok: true,

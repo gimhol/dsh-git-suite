@@ -68,7 +68,9 @@ function side(
   }
   const message = value.reason === 'large'
     ? t('mediaTooLarge')
-    : which === 'before' ? t('mediaAdded') : t('mediaRemoved')
+    : value.reason === 'lfs'
+      ? t('mediaLfsMissing')
+      : which === 'before' ? t('mediaAdded') : t('mediaRemoved')
   return <p className={cls('dsh-gitlog-media-diff-note')}>{message}</p>
 }
 

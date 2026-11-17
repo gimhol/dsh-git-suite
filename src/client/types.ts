@@ -18,6 +18,8 @@ export interface CommitFile {
   additions: number | null
   deletions: number | null
   binary: boolean
+  /** Set when the change rewrites a Git LFS pointer rather than file content. */
+  lfs?: LfsChange
 }
 
 export interface CommitDetail extends Commit {
@@ -469,6 +471,20 @@ export interface SwitchPayload {
 
 export type WorkspaceScope = 'staged' | 'unstaged' | 'untracked'
 
+/** The object a Git LFS pointer names. */
+export interface LfsPointer {
+  /** `sha256:<64 hex>` payload id. */
+  oid: string
+  /** Payload size in bytes. */
+  size: number
+}
+
+/** One file's pointers before and after a change; a null side is added or deleted. */
+export interface LfsChange {
+  before: LfsPointer | null
+  after: LfsPointer | null
+}
+
 export interface WorkspaceFile {
   path: string
   status: string
@@ -480,6 +496,8 @@ export interface WorkspaceFile {
   additions: number | null
   deletions: number | null
   binary: boolean
+  /** Git LFS stores this path, so its diff and line counts describe a pointer. */
+  lfs?: boolean
 }
 
 export interface WorkspaceStatus {
@@ -501,8 +519,8 @@ export interface WorkspaceStatusPayload {
 export interface WorkspaceDiffMediaSide {
   /** `data:` URL for this side, or null when it cannot be shown. */
   dataUrl: string | null
-  /** Why the side has no media: the blob is missing, or too large to embed. */
-  reason: 'absent' | 'large' | null
+  /** Why the side has no media: the blob is missing, too large, or an LFS pointer. */
+  reason: 'absent' | 'large' | 'lfs' | null
 }
 
 export interface WorkspaceDiffMedia {
@@ -521,6 +539,8 @@ export interface WorkspaceDiff {
   truncated: boolean
   /** Present for images and audio; `patch` is empty then. */
   media?: WorkspaceDiffMedia
+  /** Present when the change only rewrites a Git LFS pointer; `patch` is empty then. */
+  lfs?: LfsChange
 }
 
 export interface WorkspaceDiffPayload {

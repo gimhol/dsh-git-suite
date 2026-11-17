@@ -1,3 +1,7 @@
+import type { LfsChange } from './lfs.js'
+
+export type { LfsChange, LfsPointer } from './lfs.js'
+
 export interface Commit {
   hash: string
   shortHash: string
@@ -14,6 +18,8 @@ export interface CommitFile {
   additions: number | null
   deletions: number | null
   binary: boolean
+  /** Set when the change rewrites a Git LFS pointer rather than file content. */
+  lfs?: LfsChange
 }
 
 export interface CommitHeader extends Commit {
@@ -39,6 +45,8 @@ export interface WorkspaceFile {
   additions: number | null
   deletions: number | null
   binary: boolean
+  /** Git LFS stores this path, so its diff and line counts describe a pointer. */
+  lfs?: boolean
 }
 
 export interface WorkspaceStatus {
@@ -55,8 +63,8 @@ export interface WorkspaceStatus {
 export interface WorkspaceDiffMediaSide {
   /** `data:` URL for this side, or null when it cannot be shown. */
   dataUrl: string | null
-  /** Why the side has no media: the blob is missing, or too large to embed. */
-  reason: 'absent' | 'large' | null
+  /** Why the side has no media: the blob is missing, too large, or an LFS pointer. */
+  reason: 'absent' | 'large' | 'lfs' | null
 }
 
 export interface WorkspaceDiffMedia {
@@ -77,6 +85,8 @@ export interface WorkspaceDiff {
   truncated: boolean
   /** Present for images and audio; `patch` is empty then. */
   media?: WorkspaceDiffMedia
+  /** Present when the change only rewrites a Git LFS pointer; `patch` is empty then. */
+  lfs?: LfsChange
 }
 
 export interface WorkspaceCommit {

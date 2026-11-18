@@ -94,6 +94,7 @@ async function readCommitResult(root: string, signal: AbortSignal, push: boolean
     upstream = null
   }
   let pushed = false
+  let fetched = false
   if (push) {
     if (upstream === null) throw new RouteError(409, 'no-upstream', 'The current branch has no upstream to push to.')
     // Push the upstream's remote branch explicitly: `git push` with the default
@@ -104,8 +105,16 @@ async function readCommitResult(root: string, signal: AbortSignal, push: boolean
     const target = upstream.slice(slash + 1)
     await runGit(root, ['push', remote, `HEAD:${target}`], signal)
     pushed = true
+    // Refresh the remote-tracking refs right away, so the history view shows the
+    // pushed commit under its remote without waiting for a manual fetch.
+    try {
+      await runGit(root, ['fetch', '--no-tags', remote], signal)
+      fetched = true
+    } catch {
+      // The push already landed; a failed refresh only means stale refs.
+    }
   }
-  return { hash, shortHash, subject, branch, upstream, pushed }
+  return { hash, shortHash, subject, branch, upstream, pushed, fetched }
 }
 
 /** POST /git-suite/action: stage, unstage, and commit working-tree changes. */

@@ -96,6 +96,8 @@ export interface WorkspaceCommit {
   branch: string
   upstream: string | null
   pushed: boolean
+  /** The upstream remote was fetched after the push, refreshing tracking refs. */
+  fetched: boolean
 }
 
 /** One ref resolved to the commit it points at. */

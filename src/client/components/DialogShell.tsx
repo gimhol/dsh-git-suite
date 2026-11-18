@@ -14,6 +14,11 @@ export interface DialogShellProps {
   resizable?: boolean
   /** Let the user move the frame by dragging its header. */
   draggable?: boolean
+  /**
+   * Wrap the content in the shared padded block. A dialog that manages its own
+   * padding (for example a two-column layout) passes `false` and pads itself.
+   */
+  padded?: boolean
   onClose(): void
   children: React.ReactNode
 }
@@ -42,6 +47,7 @@ export function DialogShell({
   frameClassName,
   resizable = false,
   draggable = false,
+  padded = true,
   onClose,
   children,
 }: DialogShellProps): React.ReactElement {
@@ -132,7 +138,7 @@ export function DialogShell({
 
   return (
     <div
-      className={cls('dsh-gitlog-settings-backdrop')}
+      className={cls('dsh-gitlog-modal-backdrop')}
       onMouseDown={event => {
         pressedBackdrop.current = event.target === event.currentTarget
       }}
@@ -144,7 +150,7 @@ export function DialogShell({
     >
       <div
         ref={frameRef}
-        className={cls(`dsh-gitlog-settings dsh-gitlog-repo-dialog${wide ? ' dsh-gitlog-dialog-wide' : ''}${frameClassName === undefined ? '' : ` ${frameClassName}`}${sized ? ' is-sized' : ''}`)}
+        className={cls(`dsh-gitlog-modal dsh-gitlog-repo-dialog${wide ? ' dsh-gitlog-dialog-wide' : ''}${frameClassName === undefined ? '' : ` ${frameClassName}`}${sized ? ' is-sized' : ''}`)}
         style={box === null
           ? undefined
           : {
@@ -161,20 +167,22 @@ export function DialogShell({
         aria-label={title}
       >
         <div
-          className={cls(`dsh-gitlog-settings-head${draggable ? ' is-draggable' : ''}`)}
+          className={cls(`dsh-gitlog-modal-head${draggable ? ' is-draggable' : ''}`)}
           onPointerDown={startDrag}
         >
           <h2>{title}</h2>
           <button
             type="button"
-            className={cls('dsh-gitlog-settings-close')}
+            className={cls('dsh-gitlog-modal-close')}
             onClick={onClose}
             aria-label={t('close')}
           >
             ×
           </button>
         </div>
-        <div className={cls('dsh-gitlog-settings-body')}>{children}</div>
+        <div className={cls('dsh-gitlog-modal-body')}>
+          {padded ? <div className={cls('dsh-gitlog-modal-content')}>{children}</div> : children}
+        </div>
         {resizable
           ? (
               <div

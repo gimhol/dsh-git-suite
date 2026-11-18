@@ -108,10 +108,10 @@ export function ShortcutSettings({ t }: { t: Translate }): React.ReactElement {
 
   const unavailable = rows.length === 0
 
-  return h('div', { className: cls('dsh-gitlog-settings-section') },
+  return h('div', { className: cls('dsh-gitlog-modal-section') },
     h('h3', null, t('shortcutSection')),
     unavailable
-      ? h('p', { className: cls('dsh-gitlog-settings-hint') }, t('shortcutUnavailable'))
+      ? h('p', { className: cls('dsh-gitlog-modal-hint') }, t('shortcutUnavailable'))
       : h('div', { className: cls('dsh-gitlog-shortcut-list') },
         ...rows.map(row => h('div', { key: row.id, className: cls('dsh-gitlog-shortcut-row') },
           h('span', { className: cls('dsh-gitlog-shortcut-label') }, row.label),

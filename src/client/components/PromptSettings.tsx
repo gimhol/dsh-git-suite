@@ -142,7 +142,7 @@ function PromptEditorDialog({ t, repoRoot, kind: initialKind, onChanged, onClose
         </label>
       </div>
       {scope === 'repo' && !repoAvailable
-        ? <p className={cls('dsh-gitlog-settings-hint')}>{t('promptRepoOnly')}</p>
+        ? <p className={cls('dsh-gitlog-modal-hint')}>{t('promptRepoOnly')}</p>
         : null}
       <textarea
         className={cls('dsh-gitlog-prompt-text')}
@@ -155,10 +155,10 @@ function PromptEditorDialog({ t, repoRoot, kind: initialKind, onChanged, onClose
           setDirty(true)
         }}
       />
-      <p className={cls('dsh-gitlog-settings-hint')}>
+      <p className={cls('dsh-gitlog-modal-hint')}>
         {t('promptPlaceholders').replace('{list}', placeholders)}
       </p>
-      <p className={cls('dsh-gitlog-settings-hint')}>{sourceHint}</p>
+      <p className={cls('dsh-gitlog-modal-hint')}>{sourceHint}</p>
       <DialogActions>
         <Button onClick={onClose}>{t('close')}</Button>
         <Button onClick={reset} disabled={stored === undefined}>{t('promptReset')}</Button>
@@ -175,7 +175,7 @@ export function PromptSettings({ t, repoRoot }: PromptSettingsProps): React.Reac
   const choices = promptChoices(repoRoot)
 
   return (
-    <div className={cls('dsh-gitlog-settings-section')}>
+    <div className={cls('dsh-gitlog-modal-section')}>
       <h3>{t('promptsSection')}</h3>
       <div className={cls('dsh-gitlog-prompt-list')}>
         {choices.map(choice => (

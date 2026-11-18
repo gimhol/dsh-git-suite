@@ -88,7 +88,7 @@ export function EditRemoteDialog({ view, remote, url: initialUrl, t, onClose }: 
           />
         </label>
         {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
-        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
+        <DialogActions className={cls('dsh-gitlog-modal-actions')}>
           <Button onClick={onClose}>{t('cancel')}</Button>
           <Button type="button" variant="primary" disabled={busy} onClick={() => { void save() }}>
             {busy ? t('savingRemoteUrl') : t('saveRemoteUrl')}

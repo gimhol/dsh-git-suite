@@ -87,9 +87,9 @@ export function UpstreamDialog({ view, branch, t, onClose }: UpstreamDialogProps
             noMatchesLabel={t('upstreamMissing')}
           />
         </label>
-        <p className={cls('dsh-gitlog-settings-hint')}>{t('upstreamHint')}</p>
+        <p className={cls('dsh-gitlog-modal-hint')}>{t('upstreamHint')}</p>
         {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
-        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
+        <DialogActions className={cls('dsh-gitlog-modal-actions')}>
           <Button onClick={onClose}>{t('cancel')}</Button>
           <Button type="button" variant="primary" disabled={busy} onClick={() => { void save() }}>
             {busy ? t('upstreamSaving') : t('upstreamSave')}

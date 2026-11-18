@@ -110,7 +110,7 @@ export function RebaseDialog({ view, t, initialTarget = '', onDone, onClose }: R
           {t('rebaseOntoWarning').replace('{branch}', branch === '' ? 'HEAD' : branch)}
         </p>
         {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
-        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
+        <DialogActions className={cls('dsh-gitlog-modal-actions')}>
           <Button onClick={onClose}>{t('cancel')}</Button>
           <Button variant="primary" disabled={busy || target.trim() === ''} onClick={() => { void run() }}>
             {busy ? t('rebasing') : t('rebaseOntoAction')}

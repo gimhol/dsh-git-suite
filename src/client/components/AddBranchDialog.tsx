@@ -82,9 +82,9 @@ export function AddBranchDialog({ view, t, onClose }: AddBranchDialogProps): Rea
             autoComplete="off"
           />
         </label>
-        <p className={cls('dsh-gitlog-settings-hint')}>{t('branchBaseHint')}</p>
+        <p className={cls('dsh-gitlog-modal-hint')}>{t('branchBaseHint')}</p>
         {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
-        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
+        <DialogActions className={cls('dsh-gitlog-modal-actions')}>
           <Button onClick={onClose}>{t('cancel')}</Button>
           <Button type="button" variant="primary" disabled={busy} onClick={() => { void create() }}>
             {busy ? t('branchSaving') : t('branchCreate')}

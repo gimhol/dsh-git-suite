@@ -134,7 +134,7 @@ function TagDialog({ view, commit, t, onClose }: CommitDialogProps): React.React
           {t('tagForce')}
         </label>
         {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
-        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
+        <DialogActions className={cls('dsh-gitlog-modal-actions')}>
           <Button onClick={onClose}>{t('cancel')}</Button>
           <Button type="button" variant="primary" disabled={busy} onClick={() => { void saveTag() }}>
             {busy ? t('tagSaving') : t('tagSave')}
@@ -207,7 +207,7 @@ function BranchDialog({ view, commit, t, onClose }: CommitDialogProps): React.Re
           onSubmit={() => { void createBranch() }}
         />
         {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
-        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
+        <DialogActions className={cls('dsh-gitlog-modal-actions')}>
           <Button onClick={onClose}>{t('cancel')}</Button>
           <Button type="button" variant="primary" disabled={busy} onClick={() => { void createBranch() }}>
             {busy ? t('branchSaving') : t('branchCreate')}
@@ -278,7 +278,7 @@ function CheckoutDialog({ view, commit, t, onClose }: CommitDialogProps): React.
             : t('checkoutWarningBranch').replace('{name}', target)}
         </p>
         {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
-        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
+        <DialogActions className={cls('dsh-gitlog-modal-actions')}>
           <Button onClick={onClose}>{t('cancel')}</Button>
           <Button type="button" variant="primary" disabled={busy} onClick={() => { void confirmCheckout() }}>
             {busy ? t('checkingOut') : t('checkoutConfirm')}

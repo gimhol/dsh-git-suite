@@ -124,9 +124,9 @@ function CloneDialog({ view, t, onClose }: DialogProps): React.ReactElement {
             </button>
           </div>
         </label>
-        <p className={cls('dsh-gitlog-settings-hint')}>{t('cloneHint')}</p>
+        <p className={cls('dsh-gitlog-modal-hint')}>{t('cloneHint')}</p>
         {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
-        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
+        <DialogActions className={cls('dsh-gitlog-modal-actions')}>
           <Button onClick={onClose}>{t('cancel')}</Button>
           <Button type="button" variant="primary" disabled={busy} onClick={() => { void clone() }}>
             {busy ? t('cloning') : t('clone')}
@@ -228,9 +228,9 @@ function ChooseDialog({ view, t, onClose }: DialogProps): React.ReactElement {
             </button>
           </div>
         </label>
-        <p className={cls('dsh-gitlog-settings-hint')}>{t('chooseLocalHint')}</p>
+        <p className={cls('dsh-gitlog-modal-hint')}>{t('chooseLocalHint')}</p>
         {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
-        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
+        <DialogActions className={cls('dsh-gitlog-modal-actions')}>
           <Button
             onClick={view.rescanProjects}
             disabled={view.projectsStatus === 'loading'}

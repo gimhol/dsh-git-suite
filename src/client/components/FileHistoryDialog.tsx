@@ -93,6 +93,7 @@ export function FileHistoryDialog({ repoRoot, file, t, onClose }: FileHistoryDia
       wide
       resizable
       draggable
+      padded={false}
       frameClassName={cls('dsh-gitlog-file-history-dialog')}
       onClose={onClose}
     >

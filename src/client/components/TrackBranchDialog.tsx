@@ -70,7 +70,7 @@ export function TrackBranchDialog({ prompt, t, onDone, onClose }: TrackBranchDia
         <p className={cls('dsh-gitlog-note')}>
           {t('trackDialogBody').replace('{local}', prompt.local).replace('{remote}', prompt.remoteRef)}
         </p>
-        <p className={cls('dsh-gitlog-settings-hint')}>
+        <p className={cls('dsh-gitlog-modal-hint')}>
           {prompt.upstream === ''
             ? t('trackNoUpstream').replace('{local}', prompt.local)
             : t('trackUpstream').replace('{local}', prompt.local).replace('{upstream}', prompt.upstream)}
@@ -92,7 +92,7 @@ export function TrackBranchDialog({ prompt, t, onDone, onClose }: TrackBranchDia
           />
         </label>
         {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
-        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
+        <DialogActions className={cls('dsh-gitlog-modal-actions')}>
           <Button onClick={onClose}>{t('cancel')}</Button>
           <Button type="button" variant="primary" disabled={busy} onClick={() => { void confirm() }}>
             {busy ? t('trackCheckingOut') : t('trackCheckout')}

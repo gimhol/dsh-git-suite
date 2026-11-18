@@ -77,7 +77,7 @@ export function ReflogDialog({ view, t, onDone, onClose }: ReflogDialogProps): R
 
   return (
     <DialogShell title={t('reflogTitle')} t={t} wide={true} onClose={onClose}>
-      <p className={cls('dsh-gitlog-settings-hint')}>{t('reflogHint')}</p>
+      <p className={cls('dsh-gitlog-modal-hint')}>{t('reflogHint')}</p>
       {entries === null
         ? <p className={cls('dsh-gitlog-note')}>{t('reflogLoading')}</p>
         : entries.length === 0

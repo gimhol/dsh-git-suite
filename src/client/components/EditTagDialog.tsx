@@ -89,7 +89,7 @@ export function EditTagDialog({ view, tag, t, onClose }: EditTagDialogProps): Re
     return (
       <DialogShell title={t('tagEditTitle')} t={t} onClose={onClose}>
         <p className={cls('dsh-gitlog-note')} role="alert">{loadError}</p>
-        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
+        <DialogActions className={cls('dsh-gitlog-modal-actions')}>
           <Button onClick={onClose}>{t('close')}</Button>
         </DialogActions>
       </DialogShell>
@@ -144,7 +144,7 @@ export function EditTagDialog({ view, tag, t, onClose }: EditTagDialogProps): Re
           />
         </label>
         {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
-        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
+        <DialogActions className={cls('dsh-gitlog-modal-actions')}>
           <Button onClick={onClose}>{t('cancel')}</Button>
           <Button type="button" variant="primary" disabled={busy} onClick={() => { void save() }}>
             {busy ? t('tagSaving') : t('tagSave')}

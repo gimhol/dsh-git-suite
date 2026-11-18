@@ -72,24 +72,25 @@ export function SettingsDialog({ limit, t, version, repoRoot, onChange, onClose 
 
   return (
     <div
-      className={cls('dsh-gitlog-settings-backdrop')}
+      className={cls('dsh-gitlog-modal-backdrop')}
       onClick={event => {
         if (event.target === event.currentTarget) onClose()
       }}
     >
-      <div className={cls('dsh-gitlog-settings')} role="dialog" aria-modal="true" aria-label={t('settings')}>
-        <div className={cls('dsh-gitlog-settings-head')}>
+      <div className={cls('dsh-gitlog-modal')} role="dialog" aria-modal="true" aria-label={t('settings')}>
+        <div className={cls('dsh-gitlog-modal-head')}>
           <h2>{t('settings')}</h2>
           <button
             type="button"
-            className={cls('dsh-gitlog-settings-close')}
+            className={cls('dsh-gitlog-modal-close')}
             onClick={onClose}
             aria-label={t('close')}
           >
             ×
           </button>
         </div>
-        <div className={cls('dsh-gitlog-settings-body')}>
+        <div className={cls('dsh-gitlog-modal-body')}>
+          <div className={cls('dsh-gitlog-modal-content')}>
           <label className={cls('dsh-gitlog-field')}>
             <span>{t('pageSize')}</span>
             <Dropdown
@@ -103,15 +104,15 @@ export function SettingsDialog({ limit, t, version, repoRoot, onChange, onClose 
               autoFocus
             />
           </label>
-          <p className={cls('dsh-gitlog-settings-hint')}>{t('settingsHint')}</p>
+          <p className={cls('dsh-gitlog-modal-hint')}>{t('settingsHint')}</p>
 
           <ShortcutSettings t={t} />
 
           <PromptSettings t={t} repoRoot={repoRoot ?? null} />
 
-          <div className={cls('dsh-gitlog-settings-section')}>
+          <div className={cls('dsh-gitlog-modal-section')}>
             <h3>{t('versionSection')}</h3>
-            <p className={cls('dsh-gitlog-settings-hint')}>
+            <p className={cls('dsh-gitlog-modal-hint')}>
               {t('currentVersion').replace('{version}', __GIT_SUITE_VERSION__)}
             </p>
             <Button onClick={() => { void check() }} disabled={checking}>
@@ -122,11 +123,12 @@ export function SettingsDialog({ limit, t, version, repoRoot, onChange, onClose 
               ? <p className={cls('dsh-gitlog-note')} role="status">{t('updateAvailable').replace('{version}', result.latest)}</p>
               : null}
             {result !== null && result.updateAvailable
-              ? <p className={cls('dsh-gitlog-settings-hint')}>{t('updateHint')}</p>
+              ? <p className={cls('dsh-gitlog-modal-hint')}>{t('updateHint')}</p>
               : null}
             {result !== null && !result.updateAvailable
               ? <p className={cls('dsh-gitlog-note')} role="status">{t('updateUpToDate')}</p>
               : null}
+          </div>
           </div>
         </div>
       </div>

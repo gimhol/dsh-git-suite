@@ -83,9 +83,9 @@ export function IgnoreFileDialog({ view, file, t, onDone, onClose }: IgnoreFileD
           />
           {extension === '' ? t('ignoreNoExtension') : t('ignoreExtension').replace('{ext}', extension)}
         </label>
-        <p className={cls('dsh-gitlog-settings-hint')}>{`${t('ignorePattern')} ${patternOf(mode)}`}</p>
+        <p className={cls('dsh-gitlog-modal-hint')}>{`${t('ignorePattern')} ${patternOf(mode)}`}</p>
         {error === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{error}</p>}
-        <DialogActions className={cls('dsh-gitlog-settings-actions')}>
+        <DialogActions className={cls('dsh-gitlog-modal-actions')}>
           <Button onClick={onClose}>{t('cancel')}</Button>
           <Button type="button" variant="primary" disabled={busy} onClick={() => { void save() }}>
             {busy ? t('ignoring') : t('ignoreAction')}

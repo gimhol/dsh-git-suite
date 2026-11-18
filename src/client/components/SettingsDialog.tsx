@@ -1,6 +1,7 @@
 import type * as React from 'react'
 import { h, useEffect, useState } from '../runtime.js'
 import { requestVersionCheck, toApiError } from '../lib/api.js'
+import { isNewerVersion } from '../lib/version.js'
 import type { Translate, VersionPayload } from '../types.js'
 import { Dropdown } from './Dropdown.js'
 import { Button } from './Button.js'
@@ -47,6 +48,9 @@ export function SettingsDialog({ limit, t, version, repoRoot, onChange, onClose 
   const [checking, setChecking] = useState(false)
   const [result, setResult] = useState<VersionPayload | null>(version ?? null)
   const [checkError, setCheckError] = useState<string | null>(null)
+  // Compare against the version compiled into this bundle: a payload cached
+  // before a rebuild would otherwise keep announcing an installed release.
+  const updatePending = result !== null && isNewerVersion(result.latest, __GIT_SUITE_VERSION__)
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
@@ -119,13 +123,13 @@ export function SettingsDialog({ limit, t, version, repoRoot, onChange, onClose 
               {checking ? t('checkingUpdate') : t('checkUpdate')}
             </Button>
             {checkError === null ? null : <p className={cls('dsh-gitlog-note')} role="alert">{checkError}</p>}
-            {result !== null && result.updateAvailable
+            {result !== null && updatePending
               ? <p className={cls('dsh-gitlog-note')} role="status">{t('updateAvailable').replace('{version}', result.latest)}</p>
               : null}
-            {result !== null && result.updateAvailable
+            {result !== null && updatePending
               ? <p className={cls('dsh-gitlog-modal-hint')}>{t('updateHint')}</p>
               : null}
-            {result !== null && !result.updateAvailable
+            {result !== null && !updatePending
               ? <p className={cls('dsh-gitlog-note')} role="status">{t('updateUpToDate')}</p>
               : null}
           </div>

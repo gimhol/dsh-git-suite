@@ -46,6 +46,7 @@ import { useWorkspace } from './hooks/useWorkspace.js'
 import { requestBranchAction, requestCheckout, requestCommitOp, requestOperation, requestSync, requestTagStatus, requestVersionCheck, toApiError } from './lib/api.js'
 import { hasForge } from './lib/forge.js'
 import { readRepoUiState, setActiveRepo, writeRepoUiState, type ViewMode } from './lib/ui-state.js'
+import { isNewerVersion } from './lib/version.js'
 import { h, useEffect, useRef, useState } from './runtime.js'
 import { cls, CSS } from './styles.js'
 import type { Branch, Commit, OperationPayload, Selection, TagStatusPayload, Translate, VersionPayload } from './types.js'
@@ -185,6 +186,9 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
   const bodyRef = useRef<HTMLDivElement | null>(null)
   const stackRef = useRef<HTMLDivElement | null>(null)
   const hasCommits = commits.length > 0
+  // The running bundle knows its own version, so the dot is derived from that
+  // rather than from the version a server payload happened to report.
+  const updatePending = version !== null && isNewerVersion(version.latest, __GIT_SUITE_VERSION__)
   // In the narrow layout the tree sits above the log, so its splitter is horizontal.
   const treeOrientation = compact || narrow ? 'horizontal' : 'vertical'
 
@@ -542,9 +546,15 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
   }, [])
 
   // Check npm for a newer release when the panel opens, cached for six hours.
+  // A cache recorded for a different bundle version is ignored: the panel was
+  // upgraded since, so its verdict about "latest" is no longer the whole story.
   useEffect(() => {
     const cached = readVersionCache()
-    if (cached !== null && Date.now() - cached.at < VERSION_CHECK_INTERVAL) {
+    if (
+      cached !== null
+      && cached.version.current === __GIT_SUITE_VERSION__
+      && Date.now() - cached.at < VERSION_CHECK_INTERVAL
+    ) {
       setVersion(cached.version)
       return
     }
@@ -897,8 +907,8 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
               )}
           <Button
             iconOnly
-            title={version?.updateAvailable === true
-              ? t('updateAvailable').replace('{version}', version.latest)
+            title={updatePending
+              ? t('updateAvailable').replace('{version}', version?.latest ?? '')
               : t('settings')}
             onClick={() => setSettingsOpen(true)}
             ariaHasPopup="dialog"
@@ -906,7 +916,7 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
             icon={(
               <span className={cls('dsh-gitlog-settings-icon')}>
                 <SettingsIcon />
-                {version?.updateAvailable === true
+                {updatePending
                   ? <span className={cls('dsh-gitlog-settings-dot')} aria-hidden={true} />
                   : null}
               </span>

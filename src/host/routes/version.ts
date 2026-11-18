@@ -5,19 +5,24 @@ import type { VersionPayload } from '../types.js'
 const REGISTRY_URL = 'https://registry.npmjs.org/dsh-git-suite/latest'
 const FETCH_TIMEOUT_MS = 20_000
 
-let cachedVersion: Promise<string> | null = null
-
-/** Version of the installed package, read once from its own package.json. */
-function installedVersion(): Promise<string> {
-  if (cachedVersion === null) {
-    cachedVersion = readFile(new URL('../../package.json', import.meta.url), 'utf8')
-      .then(text => {
-        const parsed = JSON.parse(text) as { version?: unknown }
-        return typeof parsed.version === 'string' ? parsed.version : '0.0.0'
-      })
-      .catch(() => '0.0.0')
+/**
+ * Version of the installed package, read from its own `package.json`.
+ *
+ * The value is deliberately not memoized: a local link install can be rebuilt to
+ * a new version while DSH keeps running, and a cached value would then keep
+ * reporting an update that the checkout already contains.
+ * @param packageJsonUrl - the manifest to read; tests point this at a fixture.
+ */
+export async function installedVersion(
+  packageJsonUrl: URL = new URL('../../package.json', import.meta.url),
+): Promise<string> {
+  try {
+    const text = await readFile(packageJsonUrl, 'utf8')
+    const parsed = JSON.parse(text) as { version?: unknown }
+    return typeof parsed.version === 'string' ? parsed.version : '0.0.0'
+  } catch {
+    return '0.0.0'
   }
-  return cachedVersion
 }
 
 /** Compare two `x.y.z[-pre]` versions; positive when `left` is newer. */

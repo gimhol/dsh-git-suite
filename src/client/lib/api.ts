@@ -42,6 +42,7 @@ import type {
   CommitReviewStreamEvent,
   PullDraftPayload,
   PullDraftRequest,
+  WorkspaceDiffMedia,
 } from '../types.js'
 
 export interface ErrorDetails {
@@ -65,7 +66,7 @@ export class ApiError extends Error {
   }
 }
 
-export type RequestMode = 'projects' | 'tree' | 'branches' | 'log' | 'commit' | 'resolve' | 'tag' | 'tag-status' | 'version' | 'reflog' | 'operation' | 'apps' | 'commit-messages' | 'switch' | 'status' | 'workspace-diff' | 'staged-hash' | 'session-repo' | 'pulls' | 'pull'
+export type RequestMode = 'projects' | 'tree' | 'branches' | 'log' | 'commit' | 'resolve' | 'tag' | 'tag-status' | 'version' | 'reflog' | 'operation' | 'apps' | 'commit-messages' | 'switch' | 'status' | 'workspace-diff' | 'staged-hash' | 'commit-media' | 'session-repo' | 'pulls' | 'pull'
 
 export interface RequestParams {
   mode: RequestMode
@@ -616,6 +617,24 @@ export async function requestStagedHash(
   signal?: AbortSignal,
 ): Promise<StagedHashPayload> {
   return requestJson<StagedHashPayload>({ mode: 'staged-hash', path: body.path }, signal)
+}
+
+export interface CommitMediaPayload {
+  ok: true
+  media: WorkspaceDiffMedia
+}
+
+/** Read both sides of an image or audio file in one commit. */
+export async function requestCommitMedia(
+  body: { path: string; hash: string; file: string },
+  signal?: AbortSignal,
+): Promise<CommitMediaPayload> {
+  return requestJson<CommitMediaPayload>({
+    mode: 'commit-media',
+    path: body.path,
+    hash: body.hash,
+    file: body.file,
+  }, signal)
 }
 
 export interface RevealFileRequest {

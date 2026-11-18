@@ -845,6 +845,7 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
                   status={detailStatus}
                   error={detailError}
                   t={t}
+                  repoRoot={view.repo?.repoRoot ?? ''}
                   refTooltipOf={ref => refTooltip(ref, view.tree, detail?.shortHash ?? '', t)}
                 />
               </aside>

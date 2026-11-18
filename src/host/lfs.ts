@@ -8,7 +8,9 @@
  * payload. Everything here is about telling the two apart, so the viewer can send
  * real media instead of pointer bytes and label a pointer-only change honestly.
  */
-import { runGitBuffer, runGitBufferWithInput, runGitWithInput } from './git.js'
+import { readFile } from 'node:fs/promises'
+import { join, resolve } from 'node:path'
+import { runGit, runGitBuffer, runGitBufferWithInput, runGitWithInput } from './git.js'
 
 /** First line of every Git LFS v1 pointer file. */
 const POINTER_HEADER = 'version https://git-lfs.github.com/spec/v1'
@@ -80,6 +82,61 @@ export async function readFilteredBlob(root: string, spec: string, signal: Abort
   } catch {
     return runGitBuffer(root, ['show', spec], signal)
   }
+}
+
+/**
+ * Read a pointer's payload straight from the repository's local LFS store.
+ *
+ * `git cat-file --filters` only expands a pointer when the smudge filter and a
+ * downloaded object are both available; the object itself usually sits in
+ * `.git/lfs/objects/<aa>/<bb>/<sha256>`, which works even without git-lfs on
+ * PATH, as long as the payload was fetched at some point.
+ * @param root - repository root (also names the common Git dir).
+ * @param pointer - the pointer naming the payload.
+ * @param signal - aborts the `rev-parse` call.
+ * @returns the payload bytes, or null when this checkout does not have them.
+ */
+export async function readLfsPayload(
+  root: string,
+  pointer: LfsPointer,
+  signal: AbortSignal,
+): Promise<Buffer | null> {
+  const sha = pointer.oid.startsWith('sha256:') ? pointer.oid.slice('sha256:'.length) : ''
+  if (!/^[0-9a-f]{64}$/.test(sha)) return null
+  let lfsPath = ''
+  try {
+    lfsPath = (await runGit(root, ['rev-parse', '--git-path', 'lfs'], signal)).trim()
+  } catch {
+    return null
+  }
+  if (lfsPath === '') return null
+  const file = join(resolve(root, lfsPath), 'objects', sha.slice(0, 2), sha.slice(2, 4), sha)
+  try {
+    return await readFile(file)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Read a blob with its LFS payload resolved: the checkout filters first, then
+ * the local LFS store. Only when both miss does the caller receive the pointer
+ * bytes with `pointer` set, so a media diff can say the payload is unavailable.
+ * @param root - repository root.
+ * @param spec - a `rev:path` or `:path` object name.
+ * @param signal - aborts the git calls.
+ */
+export async function readBlobExpanded(
+  root: string,
+  spec: string,
+  signal: AbortSignal,
+): Promise<{ bytes: Buffer; pointer: LfsPointer | null }> {
+  const bytes = await readFilteredBlob(root, spec, signal)
+  const pointer = pointerFromBytes(bytes)
+  if (pointer === null) return { bytes, pointer: null }
+  const payload = await readLfsPayload(root, pointer, signal)
+  if (payload === null) return { bytes, pointer }
+  return { bytes: payload, pointer: null }
 }
 
 /**

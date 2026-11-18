@@ -1,14 +1,16 @@
 import type * as React from 'react'
-import { h, useMemo, useRef, useState } from '../runtime.js'
-import type { ApiError } from '../lib/api.js'
+import { h, useEffect, useMemo, useRef, useState } from '../runtime.js'
+import { requestCommitMedia, type ApiError } from '../lib/api.js'
 import { formatDateTime } from '../lib/format.js'
 import { splitPatch } from '../lib/patch.js'
-import type { CommitDetail, DetailStatus, Translate } from '../types.js'
+import type { CommitDetail, DetailStatus, Translate, WorkspaceDiffMedia } from '../types.js'
 import { useDiffMode } from '../lib/use-diff-mode.js'
 import { useSplitSize } from '../lib/use-split-size.js'
 import { tooltipProps } from './Tooltip.js'
 import { Refs } from './Refs.js'
 import { DiffView } from './DiffView.js'
+import { MediaDiff } from './MediaDiff.js'
+import { mediaKindOf } from '../lib/media.js'
 import { LfsDiff } from './LfsDiff.js'
 import { Spinner } from './States.js'
 import { ExpandIcon, SplitDiffIcon, UnifiedDiffIcon } from './GitLogIcon.js'
@@ -16,11 +18,27 @@ import { DiffDialog } from './DiffDialog.js'
 import { Splitter } from './Splitter.js'
 import { cls } from '../styles.js'
 
+/** Path from a patch section's `+++ b/…` line, which also resolves renames. */
+function mediaPathOf(section: string | undefined, fallback: string): string {
+  if (section === undefined) return fallback
+  for (const line of section.split('\n')) {
+    if (!line.startsWith('+++ ')) continue
+    let value = line.slice(4)
+    if (value === '/dev/null') return ''
+    if (value.startsWith('b/')) value = value.slice(2)
+    if (value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1)
+    return value
+  }
+  return fallback
+}
+
 export interface DetailPaneProps {
   detail: CommitDetail | null
   status: DetailStatus
   error: ApiError | null
   t: Translate
+  /** Repository root, needed to load the media of an image/audio file. */
+  repoRoot: string
   /** Tooltip text for one ref chip; null leaves it silent. */
   refTooltipOf?(ref: string): string | null
 }
@@ -36,7 +54,7 @@ function clamp(value: number, min: number, max: number): number {
  * The pane under the log: commit metadata and changed files on the left, the
  * patch on the right. The sidebar layout stacks the two columns instead.
  */
-export function DetailPane({ detail, status, error, t, refTooltipOf }: DetailPaneProps): React.ReactElement {
+export function DetailPane({ detail, status, error, t, repoRoot, refTooltipOf }: DetailPaneProps): React.ReactElement {
   const [fileChoice, setFileChoice] = useState<{ hash: string | null; index: number }>({ hash: null, index: 0 })
   /** The selected file's patch shown in its own modal window. */
   const [diffDialogOpen, setDiffDialogOpen] = useState(false)
@@ -72,6 +90,28 @@ export function DetailPane({ detail, status, error, t, refTooltipOf }: DetailPan
       return Math.max(current, (infoRef.current?.clientHeight ?? 0) - 200)
     },
   })
+
+  // Media of the selected file: an image or audio change has no text patch to show.
+  const mediaSelected = detail !== null && fileChoice.hash === detail.hash ? fileChoice.index : 0
+  const mediaSection = sections[mediaSelected]
+  const mediaFile = detail?.files[mediaSelected]
+  const mediaPath = mediaPathOf(mediaSection, mediaFile?.path ?? '')
+  const mediaKind = mediaPath === '' ? null : mediaKindOf(mediaPath)
+  const [media, setMedia] = useState<WorkspaceDiffMedia | null>(null)
+
+  useEffect(() => {
+    setMedia(null)
+    if (mediaKind === null || detail === null || repoRoot === '') return
+    const controller = new AbortController()
+    void requestCommitMedia({ path: repoRoot, hash: detail.hash, file: mediaPath }, controller.signal)
+      .then(payload => {
+        if (!controller.signal.aborted) setMedia(payload.media)
+      })
+      .catch(() => {
+        // Keep the text or LFS fallback when the media cannot be read.
+      })
+    return () => controller.abort()
+  }, [detail, repoRoot, mediaPath, mediaKind])
 
   if (status === 'idle') {
     return (
@@ -190,7 +230,7 @@ export function DetailPane({ detail, status, error, t, refTooltipOf }: DetailPan
             ? <code className={cls('dsh-gitlog-patch-file')} {...tooltipProps(activeFile.path)}>{activeFile.path}</code>
             : null}
           <span className={cls('dsh-gitlog-diff-actions')}>
-            {activeSection === undefined || activeLfs !== undefined
+            {activeSection === undefined || activeLfs !== undefined || media !== null
               ? null
               : (
                   <button
@@ -216,7 +256,9 @@ export function DetailPane({ detail, status, error, t, refTooltipOf }: DetailPan
         </div>
         {detail.files.length === 0
           ? <p className={cls('dsh-gitlog-note')}>{t('noPatch')}</p>
-          : activeLfs !== undefined
+          : media !== null
+            ? <MediaDiff media={media} path={mediaPath} t={t} />
+            : activeLfs !== undefined
             ? <LfsDiff lfs={activeLfs} path={activeFile?.path} t={t} />
             : activeSection !== undefined
               ? (
@@ -234,7 +276,7 @@ export function DetailPane({ detail, status, error, t, refTooltipOf }: DetailPan
           ? <p className={cls('dsh-gitlog-note')}>{t('patchTruncated')}</p>
           : null}
       </div>
-      {diffDialogOpen && activeSection !== undefined && activeLfs === undefined
+      {diffDialogOpen && activeSection !== undefined && activeLfs === undefined && media === null
         ? (
             <DiffDialog
               path={detail.files[selectedFile]?.path ?? ''}

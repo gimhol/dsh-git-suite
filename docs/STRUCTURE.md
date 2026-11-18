@@ -207,6 +207,7 @@ LICENSE
 | `client/components/PullChecksBadge.tsx` | CI rollup pill linking to the forge's checks page |
 | `client/components/PullReviewBadge.tsx` | Read-only review summary: approved / changes requested / pending |
 | `client/components/Markdown.tsx` | Safe Markdown rendering for discussion and AI reviews: headings, paragraphs, lists, quotes, code blocks (Prism), tables, inline code/links/emphasis; no raw HTML, links limited to http(s) |
+| `client/components/Note.tsx` | Dismissible panel note for push/pull/fetch, commit, and branch/tag results and errors; a success note also clears itself after a few seconds |
 | `client/components/AiReviewDialog.tsx` | Asks for the AI review context mode (worktree / full files / diff only) |
 | `client/components/CreatePullDialog.tsx` | Create-PR form: read-only source branch, target-branch dropdown, title/description/draft, and a head/base remote hint for cross-repository requests |
 | `client/components/VirtualList.tsx` | Fixed-height windowed list component: owns the scroll container, measures with `ResizeObserver`, renders the visible slice plus overscan, uses top/bottom spacers, scrolls back on `resetKey`, and exposes `onReachEnd` / `onViewportChange`; both the PR list and the commit list use it |

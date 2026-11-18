@@ -60,6 +60,9 @@ export interface GitLogView {
   selection: Selection
   branchLabel: string
   scanNote: string | null
+  /** Clear a note the panel shows above the list; each carries its own close button. */
+  clearError(): void
+  clearSwitchError(): void
   graph: GraphLayout
   sort: 'date' | 'topo'
   showRemotes: boolean
@@ -526,6 +529,8 @@ export function useGitLogView(t: Translate, options?: { sessionId?: string }): G
     selectRef,
     switchBranch: (selection: Selection) => { void switchBranch(selection) },
     selectCommit,
+    clearError: () => { setError(null) },
+    clearSwitchError: () => { setSwitchError(null) },
   }
 }
 

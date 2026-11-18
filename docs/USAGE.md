@@ -12,6 +12,7 @@
 - **Commit**: stage whole files with the row buttons, single hunks with **Stage this hunk**, or a dragged line selection via the right-click menu, then write a message (↑ walks this repository's recent messages) and press **Commit**. **Amend last commit** and **push after committing** are optional.
 - **Diffs**: every diff has a layout toggle between unified rows and side-by-side columns, and code is syntax-highlighted by the file's language (50+ common languages; unknown types stay plain); Markdown fenced code blocks are highlighted by their fence language too. `.m` currently maps to Objective-C; use a `matlab` fence label for MATLAB snippets.
 - **Everything else**: right-click branches, tags, stashes, remotes, commits, and files for their menus (checkout, merge, rebase, cherry-pick, reset, stash, tag, …); the top-right buttons open a terminal and the file manager, and open the repository in the detected editor (VS Code, Insiders, Cursor, Windsurf, VSCodium, Zed, Sublime Text, TextMate, a JetBrains IDE, Visual Studio, or Android Studio).
+- **Messages**: push/pull/fetch, commit, and branch/tag results and errors show at the top of the panel; each has a close button, and a success message also clears itself after a few seconds.
 
 ## Features
 

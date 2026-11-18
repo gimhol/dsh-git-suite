@@ -27,6 +27,7 @@ import { CredentialDialog } from './components/CredentialDialog.js'
 import { FetchTagDialog } from './components/FetchTagDialog.js'
 import { StashMenu, type StashMenuState } from './components/StashMenu.js'
 import { ConflictBanner } from './components/ConflictBanner.js'
+import { Note } from './components/Note.js'
 import { refTooltip } from './lib/ref-tooltip.js'
 import { toast } from './components/Toast.js'
 import { Button } from './components/Button.js'
@@ -179,6 +180,8 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
   const [tagForcePush, setTagForcePush] = useState<string | null>(null)
   const [tagFetch, setTagFetch] = useState<string | null>(null)
   const [tagActionError, setTagActionError] = useState<string | null>(null)
+  /** The scan note the reader closed; a different note shows again. */
+  const [scanNoteDismissed, setScanNoteDismissed] = useState<string | null>(null)
   const bodyRef = useRef<HTMLDivElement | null>(null)
   const stackRef = useRef<HTMLDivElement | null>(null)
   const hasCommits = commits.length > 0
@@ -929,13 +932,55 @@ export function GitLogPanel({ t, compact = false, sessionId }: GitLogPanelProps)
               onAbort={() => { void conflictAction('abort') }}
             />
           )}
-      {view.scanNote !== null ? <p className={cls('dsh-gitlog-note')}>{view.scanNote}</p> : null}
-      {branchActionError !== null ? <p className={cls('dsh-gitlog-note')} role="alert">{branchActionError}</p> : null}
-      {tagActionError !== null ? <p className={cls('dsh-gitlog-note')} role="alert">{tagActionError}</p> : null}
+      {view.scanNote !== null && view.scanNote !== scanNoteDismissed
+        ? (
+            <Note
+              text={view.scanNote}
+              closeLabel={t('close')}
+              onDismiss={() => setScanNoteDismissed(view.scanNote)}
+            />
+          )
+        : null}
+      {branchActionError !== null
+        ? (
+            <Note
+              text={branchActionError}
+              closeLabel={t('close')}
+              tone="error"
+              onDismiss={() => setBranchActionError(null)}
+            />
+          )
+        : null}
+      {tagActionError !== null
+        ? (
+            <Note
+              text={tagActionError}
+              closeLabel={t('close')}
+              tone="error"
+              onDismiss={() => setTagActionError(null)}
+            />
+          )
+        : null}
       {view.switching ? <p className={cls('dsh-gitlog-note')} role="status">{t('switching')}</p> : null}
-      {view.switchError !== null ? <p className={cls('dsh-gitlog-note')} role="alert">{view.switchError}</p> : null}
+      {view.switchError !== null
+        ? (
+            <Note
+              text={view.switchError}
+              closeLabel={t('close')}
+              tone="error"
+              onDismiss={view.clearSwitchError}
+            />
+          )
+        : null}
       {error !== null && commits.length > 0
-        ? <p className={cls('dsh-gitlog-note')} role="status">{`${t('errorTitle')} · ${error.message}`}</p>
+        ? (
+            <Note
+              text={`${t('errorTitle')} · ${error.message}`}
+              closeLabel={t('close')}
+              tone="error"
+              onDismiss={view.clearError}
+            />
+          )
         : null}
       {body}
       {settingsOpen

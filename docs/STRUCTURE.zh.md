@@ -207,6 +207,7 @@ LICENSE
 | `client/components/PullChecksBadge.tsx` | CI 汇总胶囊，带平台检查页链接 |
 | `client/components/PullReviewBadge.tsx` | 评审只读汇总：已批准/有修改意见/待评审 |
 | `client/components/Markdown.tsx` | 安全 Markdown 渲染：标题、段落、列表、引用、代码块（Prism 高亮）、表格、行内代码/链接/粗斜体；不渲染原始 HTML，链接仅允许 http(s)；用于讨论与 AI 审查 |
+| `client/components/Note.tsx` | 可关闭的面板提示行：推送/拉取/获取、提交、分支/标签操作的结果与错误；成功提示约 6 秒后自动消失 |
 | `client/components/AiReviewDialog.tsx` | AI 审查前询问上下文方式（临时检出/完整文件/仅 Diff） |
 | `client/components/CreatePullDialog.tsx` | 创建 PR 表单：源分支只读、目标分支下拉、标题/描述/草稿，跨仓库时提示 head/base 远端 |
 | `client/components/VirtualList.tsx` | 固定行高的窗口化列表组件：自管滚动容器、`ResizeObserver` 测量、可见切片 + overscan、上下占位高度、`resetKey` 回顶、`onReachEnd`、`onViewportChange`；PR 列表与提交列表都使用它 |

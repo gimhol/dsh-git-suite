@@ -60,6 +60,12 @@ export interface WorkspaceView {
   syncAction: SyncAction | null
   syncError: ApiError | null
   syncNote: string | null
+  /** Clear one of the panel notes above; each message carries its own close button. */
+  clearNote(): void
+  clearActionError(): void
+  clearGenerateError(): void
+  clearSyncNote(): void
+  clearSyncError(): void
   generate(): void
   refresh(): void
   sync(action: SyncAction, target?: { remote: string; branch: string }, fetchOptions?: FetchOptions): void
@@ -399,6 +405,20 @@ export function useWorkspace(path: string, revision: string, t: Translate, onCom
     void runAction({ action: 'commit', message, amend, push })
   }, [runAction, message, amend, push])
 
+  // A success line is an acknowledgement, not state: clear it after a moment so
+  // the panel returns to its normal layout, and let the reader close it sooner.
+  useEffect(() => {
+    if (note === null) return undefined
+    const timer = window.setTimeout(() => setNote(null), 6000)
+    return () => window.clearTimeout(timer)
+  }, [note])
+
+  useEffect(() => {
+    if (syncNote === null) return undefined
+    const timer = window.setTimeout(() => setSyncNote(null), 6000)
+    return () => window.clearTimeout(timer)
+  }, [syncNote])
+
   return {
     status,
     statusState,
@@ -419,6 +439,11 @@ export function useWorkspace(path: string, revision: string, t: Translate, onCom
     syncAction,
     syncError,
     syncNote,
+    clearNote: () => { setNote(null) },
+    clearActionError: () => { setActionError(null) },
+    clearGenerateError: () => { setGenerateError(null) },
+    clearSyncNote: () => { setSyncNote(null) },
+    clearSyncError: () => { setSyncError(null) },
     generate,
     refresh,
     sync,

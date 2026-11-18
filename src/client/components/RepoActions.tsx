@@ -14,6 +14,7 @@ import { FetchDialog } from './FetchDialog.js'
 import { PushDialog } from './PushDialog.js'
 import { SyncDialog } from './SyncDialog.js'
 import { toast } from './Toast.js'
+import { Note } from './Note.js'
 import { dshTerminal } from '../terminalBridge.js'
 import { cls } from '../styles.js'
 
@@ -177,8 +178,12 @@ export function RepoActions({ view, ws, mode, onModeChange, t }: RepoActionsProp
           onClick={() => { void openEditor(editor) }}
         />
       ))}
-      {ws.syncNote !== null ? <p className={cls('dsh-gitlog-note')} role="status">{ws.syncNote}</p> : null}
-      {ws.syncError !== null ? <p className={cls('dsh-gitlog-note')} role="alert">{ws.syncError.message}</p> : null}
+      {ws.syncNote !== null
+        ? <Note text={ws.syncNote} closeLabel={t('close')} onDismiss={ws.clearSyncNote} />
+        : null}
+      {ws.syncError !== null
+        ? <Note text={ws.syncError.message} closeLabel={t('close')} tone="error" onDismiss={ws.clearSyncError} />
+        : null}
       {pullOpen
         ? (
             <SyncDialog

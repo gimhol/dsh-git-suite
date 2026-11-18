@@ -2242,6 +2242,38 @@ $brand: var(--dsw-alias-brand-primary);
     color: $label-secondary;
     font-size: $font-meta;
     line-height: 1.5;
+
+    // A message the reader can clear (finished push, rejected action).
+    &.is-dismissible {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    &.is-error {
+      color: var(--dsw-alias-state-error-primary);
+    }
+  }
+
+  &-note-text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  &-note-close {
+    flex: none;
+    padding: 0 4px;
+    border: 0;
+    color: inherit;
+    background: none;
+    font-size: 14px;
+    line-height: 1.2;
+    cursor: pointer;
+    opacity: 0.7;
+
+    &:hover {
+      opacity: 1;
+    }
   }
 
   &-state {

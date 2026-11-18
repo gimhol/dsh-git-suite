@@ -16,6 +16,7 @@ import { hideTooltip, showTooltip, tooltipProps } from './Tooltip.js'
 import { DiffView } from './DiffView.js'
 import { MediaDiff } from './MediaDiff.js'
 import { LfsDiff } from './LfsDiff.js'
+import { Note } from './Note.js'
 import { FileActionDialog } from './FileActionDialog.js'
 import { CommitReviewDialog } from './CommitReviewDialog.js'
 import { DiffDialog } from './DiffDialog.js'
@@ -607,7 +608,9 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
         rows={3}
         spellCheck={false}
       />
-      {ws.generateError !== null ? <p className={cls('dsh-gitlog-note')} role="alert">{ws.generateError.message}</p> : null}
+      {ws.generateError !== null
+        ? <Note text={ws.generateError.message} closeLabel={t('close')} tone="error" onDismiss={ws.clearGenerateError} />
+        : null}
       <div className={cls('dsh-gitlog-workspace-options')}>
         <label className={cls('dsh-gitlog-check')}>
           <input
@@ -629,8 +632,12 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
             : `${t('pushAfterCommit')} ${status.upstream}`}
         </label>
       </div>
-      {ws.note !== null ? <p className={cls('dsh-gitlog-note')} role="status">{ws.note}</p> : null}
-      {ws.actionError !== null ? <p className={cls('dsh-gitlog-note')} role="alert">{ws.actionError.message}</p> : null}
+      {ws.note !== null
+        ? <Note text={ws.note} closeLabel={t('close')} onDismiss={ws.clearNote} />
+        : null}
+      {ws.actionError !== null
+        ? <Note text={ws.actionError.message} closeLabel={t('close')} tone="error" onDismiss={ws.clearActionError} />
+        : null}
       <div className={cls('dsh-gitlog-workspace-commit-actions')}>
         <Button
           iconOnly

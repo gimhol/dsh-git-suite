@@ -18,6 +18,7 @@ import { MediaDiff } from './MediaDiff.js'
 import { LfsDiff } from './LfsDiff.js'
 import { Note } from './Note.js'
 import { FileActionDialog } from './FileActionDialog.js'
+import { FileHistoryDialog } from './FileHistoryDialog.js'
 import { CommitReviewDialog } from './CommitReviewDialog.js'
 import { DiffDialog } from './DiffDialog.js'
 import { DeleteFilesDialog } from './DeleteFilesDialog.js'
@@ -75,6 +76,8 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
   const repoKey = view.repo?.repoRoot ?? ''
   const [checked, setChecked] = useState<{ staged: string[]; unstaged: string[] }>({ staged: [], unstaged: [] })
   const [fileMenu, setFileMenu] = useState<{ file: WorkspaceFile; x: number; y: number } | null>(null)
+  /** Path whose change-history window is open. */
+  const [historyFile, setHistoryFile] = useState<string | null>(null)
   const [lineMenu, setLineMenu] = useState<{ lines: number[]; x: number; y: number } | null>(null)
   const [lineBusy, setLineBusy] = useState(false)
   const lineMenuRef = useRef<HTMLDivElement | null>(null)
@@ -894,6 +897,16 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
                 type="button"
                 role="menuitem"
                 onClick={() => {
+                  setHistoryFile(fileMenu.file.path)
+                  setFileMenu(null)
+                }}
+              >
+                {t('fileHistoryOpen')}
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
                   void revealFile(fileMenu.file)
                   setFileMenu(null)
                 }}
@@ -1001,6 +1014,16 @@ export function WorkspacePane({ view, ws, t, narrow = false, operation, onOperat
                   : (ws.selected?.scope === 'staged' ? t('unstageLine') : t('stageLine'))}
               </button>
             </div>
+          )}
+      {historyFile === null
+        ? null
+        : (
+            <FileHistoryDialog
+              repoRoot={view.repo?.repoRoot ?? ''}
+              file={historyFile}
+              t={t}
+              onClose={() => setHistoryFile(null)}
+            />
           )}
       {fileAction === null
         ? null

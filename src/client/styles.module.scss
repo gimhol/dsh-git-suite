@@ -2370,6 +2370,8 @@ $brand: var(--dsw-alias-brand-primary);
 
   &-settings {
     box-sizing: border-box;
+    // Anchors the optional resize grip to the frame's corner.
+    position: relative;
     // Wide enough that a shortcut row keeps its label, keycaps, and actions on
     // one line instead of wrapping the buttons under the label.
     width: min(500px, 100%);
@@ -2394,7 +2396,19 @@ $brand: var(--dsw-alias-brand-primary);
     justify-content: space-between;
     gap: 12px;
     padding: 10px 16px;
+    // The title is a label, not content: dragging it must not select text.
+    user-select: none;
     border-bottom: 1px solid $border-l1;
+
+    // A draggable header reads as a title bar.
+    &.is-draggable {
+      cursor: grab;
+      touch-action: none;
+
+      &:active {
+        cursor: grabbing;
+      }
+    }
     background: $bg-layer-1;
 
     h2 {
@@ -2527,6 +2541,138 @@ $brand: var(--dsw-alias-brand-primary);
   // The editor's own modal is wider than a settings frame.
   &-settings.dsh-gitlog-prompt-dialog {
     width: min(760px, 94vw);
+  }
+
+  // Change history: commit list on the left, that commit's file diff on the right.
+  &-settings.dsh-gitlog-file-history-dialog {
+    width: min(1320px, 97vw);
+  }
+
+  // Corner grip rendered only for dialogs that opt into resizing.
+  &-dialog-resize {
+    position: absolute;
+    right: 3px;
+    bottom: 3px;
+    width: 16px;
+    height: 16px;
+    border-right: 2px solid $border-l2;
+    border-bottom: 2px solid $border-l2;
+    border-bottom-right-radius: 8px;
+    cursor: nwse-resize;
+    opacity: .55;
+    touch-action: none;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  // A user-sized frame owns its height: the body scrolls and the content fills it.
+  &-settings.is-sized {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    .dsh-gitlog-settings-body {
+      display: flex;
+      flex: 1 1 auto;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .dsh-gitlog-file-history {
+      flex: 1 1 auto;
+      min-height: 0;
+      max-height: none;
+    }
+  }
+
+  &-file-history {
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    gap: 12px;
+    width: 100%;
+    min-height: 360px;
+    max-height: min(74vh, 760px);
+
+    // Collapsed: the diff takes the whole width, the list hides below.
+    &.is-list-collapsed {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0;
+    }
+  }
+
+  &-file-history-diff-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  &-file-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-height: 0;
+    overflow: auto;
+    padding-right: 8px;
+    border-right: 1px solid $border-l1;
+
+    &.is-hidden {
+      display: none;
+    }
+  }
+
+  &-file-history-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 8px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      background: $bg-layer-2;
+    }
+
+    &.is-selected {
+      background: $bg-layer-2;
+      border-color: $border-l2;
+    }
+  }
+
+  &-file-history-subject {
+    overflow: hidden;
+    font-size: $font-body;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &-file-history-meta {
+    color: $label-secondary;
+    font-size: $font-tiny;
+  }
+
+  &-file-history-diff {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+  }
+
+  &-file-history-diff-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
   }
 
   &-prompt-text {

@@ -339,6 +339,28 @@ export function ReviewIcon({ size = 16 }: { size?: number }): React.ReactElement
   )
 }
 
+/** Panel-with-lines glyph: the commit list beside a diff. */
+export function HistoryListIcon({ size = 16 }: { size?: number }): React.ReactElement {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden={true}
+      focusable={false}
+    >
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M8.5 4v16" />
+      <path d="M12 9.5h5.5M12 13h5.5M12 16.5h3.5" />
+    </svg>
+  )
+}
+
 export function CommitIcon(): React.ReactElement {
   return (
     <svg

@@ -10,6 +10,7 @@ import { tooltipProps } from './Tooltip.js'
 import { Refs } from './Refs.js'
 import { DiffView } from './DiffView.js'
 import { MediaDiff } from './MediaDiff.js'
+import { FileHistoryDialog } from './FileHistoryDialog.js'
 import { mediaKindOf } from '../lib/media.js'
 import { LfsDiff } from './LfsDiff.js'
 import { Spinner } from './States.js'
@@ -98,6 +99,11 @@ export function DetailPane({ detail, status, error, t, repoRoot, refTooltipOf }:
   const mediaPath = mediaPathOf(mediaSection, mediaFile?.path ?? '')
   const mediaKind = mediaPath === '' ? null : mediaKindOf(mediaPath)
   const [media, setMedia] = useState<WorkspaceDiffMedia | null>(null)
+  /** Right-click menu on one changed-file row. */
+  const [fileMenu, setFileMenu] = useState<{ file: string; x: number; y: number } | null>(null)
+  const fileMenuRef = useRef<HTMLDivElement | null>(null)
+  /** Path whose change-history window is open. */
+  const [historyFile, setHistoryFile] = useState<string | null>(null)
 
   useEffect(() => {
     setMedia(null)
@@ -112,6 +118,18 @@ export function DetailPane({ detail, status, error, t, repoRoot, refTooltipOf }:
       })
     return () => controller.abort()
   }, [detail, repoRoot, mediaPath, mediaKind])
+
+  // Close the file menu on any press outside it.
+  useEffect(() => {
+    if (fileMenu === null) return
+    const onPress = (event: MouseEvent): void => {
+      if (fileMenuRef.current !== null && !fileMenuRef.current.contains(event.target as Node)) {
+        setFileMenu(null)
+      }
+    }
+    document.addEventListener('mousedown', onPress)
+    return () => document.removeEventListener('mousedown', onPress)
+  }, [fileMenu])
 
   if (status === 'idle') {
     return (
@@ -202,6 +220,11 @@ export function DetailPane({ detail, status, error, t, repoRoot, refTooltipOf }:
                         aria-pressed={index === selectedFile}
                         {...tooltipProps(file.path)}
                         onClick={() => setFileChoice({ hash: detail.hash, index })}
+                        onContextMenu={event => {
+                          event.preventDefault()
+                          event.stopPropagation()
+                          setFileMenu({ file: file.path, x: event.clientX, y: event.clientY })
+                        }}
                       >
                         <span className={cls('dsh-gitlog-file-path')}>{file.path}</span>
                         {file.lfs !== undefined
@@ -288,6 +311,34 @@ export function DetailPane({ detail, status, error, t, repoRoot, refTooltipOf }:
             />
           )
         : null}
+      {fileMenu === null
+        ? null
+        : (
+            <div
+              ref={fileMenuRef}
+              className={cls('dsh-gitlog-commit-menu dsh-gitlog-file-menu')}
+              style={{
+                left: Math.min(fileMenu.x, window.innerWidth - 220),
+                top: Math.min(fileMenu.y, window.innerHeight - 100),
+              }}
+              role="menu"
+              aria-label={t('fileHistoryOpen')}
+            >
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setHistoryFile(fileMenu.file)
+                  setFileMenu(null)
+                }}
+              >
+                {t('fileHistoryOpen')}
+              </button>
+            </div>
+          )}
+      {historyFile === null
+        ? null
+        : <FileHistoryDialog repoRoot={repoRoot} file={historyFile} t={t} onClose={() => setHistoryFile(null)} />}
     </div>
   )
 }

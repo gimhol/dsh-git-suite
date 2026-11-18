@@ -18,6 +18,7 @@ import { readWorkspaceStatus } from './routes/status.js'
 import { readWorkspaceDiff } from './routes/workspace-diff.js'
 import { readStagedHash } from './routes/staged-hash.js'
 import { readCommitMedia } from './routes/commit-media.js'
+import { readFileCommitDiff, readFileLog } from './routes/file-history.js'
 import { scanProjects } from './scan.js'
 import type { RouteContext } from './types.js'
 
@@ -53,6 +54,8 @@ export function createResource(context: RouteContext): RouteResource {
       if (mode === 'workspace-diff') return json(await readWorkspaceDiff(context, url, request.signal))
       if (mode === 'staged-hash') return json(await readStagedHash(context, url, request.signal))
       if (mode === 'commit-media') return json(await readCommitMedia(context, url, request.signal))
+      if (mode === 'file-log') return json(await readFileLog(context, url, request.signal))
+      if (mode === 'file-commit-diff') return json(await readFileCommitDiff(context, url, request.signal))
       if (mode === 'session-repo') return json(await readSessionRepo(context, url, request.signal))
       if (mode === 'pulls') return json(await readPulls(context, url, request.signal))
       if (mode === 'pull') return json(await readPull(context, url, request.signal))

@@ -485,6 +485,31 @@ export interface LfsChange {
   after: LfsPointer | null
 }
 
+export interface FileHistoryCommit {
+  hash: string
+  shortHash: string
+  author: string
+  date: string
+  subject: string
+}
+
+export interface FileHistoryPayload {
+  ok: true
+  file: string
+  commits: FileHistoryCommit[]
+}
+
+export interface FileCommitDiffPayload {
+  ok: true
+  file: string
+  hash: string
+  patch: string
+  binary: boolean
+  truncated: boolean
+  /** Present when the change only rewrites a Git LFS pointer. */
+  lfs?: LfsChange
+}
+
 export interface WorkspaceFile {
   path: string
   status: string

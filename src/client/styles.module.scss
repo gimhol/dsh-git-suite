@@ -2601,6 +2601,14 @@ $brand          : var(--dsw-alias-brand-primary);
       min-height: 0;
       max-height: none;
     }
+
+    // A resized diff dialog gives the extra height to the patch instead of
+    // keeping the height it was opened with.
+    .dsh-gitlog-diff-dialog-body {
+      flex      : 1 1 auto;
+      height    : auto;
+      min-height: 0;
+    }
   }
 
   &-file-history {

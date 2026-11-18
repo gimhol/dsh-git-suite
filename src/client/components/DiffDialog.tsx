@@ -26,7 +26,14 @@ export interface DiffDialogProps {
 export function DiffDialog({ path, patch, t, mode, onToggleMode, onClose }: DiffDialogProps): React.ReactElement {
   const modeLabel = mode === 'split' ? t('diffUnified') : t('diffSplit')
   return (
-    <DialogShell title={path} t={t} frameClassName={cls('dsh-gitlog-diff-dialog')} onClose={onClose}>
+    <DialogShell
+      title={path}
+      t={t}
+      resizable
+      draggable
+      frameClassName={cls('dsh-gitlog-diff-dialog')}
+      onClose={onClose}
+    >
       <div className={cls('dsh-gitlog-diff-dialog-toolbar')}>
         <button
           type="button"

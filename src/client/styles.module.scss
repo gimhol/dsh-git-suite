@@ -798,6 +798,85 @@ $brand          : var(--dsw-alias-brand-primary);
     line-height  : 1.5;
   }
 
+  &-merge-into {
+    display    : flex;
+    align-items: baseline;
+    gap        : 5px;
+    min-width  : 0;
+    margin     : 0;
+    color      : $label-secondary;
+    font-size  : $font-tiny;
+    line-height: 1.4;
+
+    code {
+      min-width    : 0;
+      overflow     : hidden;
+      color        : $label-primary;
+      font-family  : var(--gitlog-mono);
+      font-size    : $font-tiny;
+      text-overflow: ellipsis;
+      white-space  : nowrap;
+    }
+  }
+
+  &-merge-message {
+    display       : flex;
+    flex-direction: column;
+    gap           : 5px;
+    min-width     : 0;
+  }
+
+  &-merge-options {
+    display    : flex;
+    flex-wrap  : wrap;
+    align-items: center;
+    gap        : 2px 16px;
+
+    .dsh-gitlog-check {
+      height   : auto;
+      font-size: $font-meta;
+
+      input {
+        margin: 0;
+      }
+    }
+  }
+
+  &-merge-hint {
+    margin     : 0;
+    color      : $label-secondary;
+    font-size  : $font-tiny;
+    line-height: 1.5;
+  }
+
+  // One flag column keeps `--no-ff`, `--ff-only`, and friends on the same
+  // right edge instead of ending wherever the translated label happens to.
+  &-merge-modes {
+    gap: 2px;
+
+    legend {
+      // The browser legend inset would push its text off the radio column.
+      padding: 0;
+    }
+
+    .dsh-gitlog-merge-mode {
+      display              : grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items          : center;
+      gap                  : 8px;
+      min-height           : 24px;
+
+      span {
+        min-width: 0;
+      }
+
+      code {
+        justify-self: end;
+        white-space : nowrap;
+      }
+    }
+  }
+
   // Paths listed in the bulk untracked-file delete confirmation.
   // Settings gear with an update badge: the wrapper anchors the dot.
   &-settings-icon {

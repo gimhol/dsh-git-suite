@@ -150,7 +150,7 @@ LICENSE
 | `host/pick-handler.ts` | POST `/git-suite/pick-directory`：调用 `ctx.directoryPicker` 的原生选择器；`mode: 'repo'`（默认）解析 Git 根并检查 DSH 工作区，`mode: 'directory'` 返回普通目录供克隆目标使用 |
 | `host/sync-handler.ts` | `POST /git-suite/sync`：`fetch` 支持 `fetchAll`/`prune`/`tags`/`forceTags`（对应 `--all`/`--prune`/`--tags`/`--force`），也可只获取指定 `remote`；`pull` 按所选 `remote`/`branch` 拉取：当前分支走 `git pull`，非当前分支只把该分支快进到抓取到的提交（不动工作区），无法快进返回 `409 diverged`，该分支被其它 worktree 占用返回 `409 branch-checked-out`；`push` 按 `refs`（本地分支→远程分支，可逐项 `track`）推送，支持单个标签（`tagRefs`）、全部标签（`tags`）与 `force`；`fetch-tag` 用远端覆盖单个本地标签；认证失败返回 `401 auth-required`，附带远端名、URL 协议与已配置的凭据助手 |
 | `host/remote-handler.ts` | `POST /git-suite/remote`：新增（`action: 'add'`）、改名和/或修改地址（`action: 'set-url'`）或删除（`action: 'remove'`）指定远端，会校验名称、地址格式以及是否已存在 |
-| `host/branch-action-handler.ts` | `POST /git-suite/branch-action`：本地分支的 `merge`/`rebase`/`rename`/`delete`；把当前分支变基到任意引用（`rebase-onto`，目标用 `rev-parse --verify` 解析，遇到冲突返回 `409 operation-conflict`）；以远端分支为起点检出为本地跟踪分支（`track`）：默认名已被无关本地分支占用时返回 `409 local-branch-exists`，带 `local`/`remote`/`upstream` 与一个可用的 `suggested` 名称；已有本地分支正好跟踪该远端引用时直接切换过去；显式传 `newName` 则按该名建跟踪分支；把本地分支改为跟踪另一条远端分支，或取消跟踪（`upstream`，即 `branch --set-upstream-to` / `--unset-upstream`，找不到远端分支返回 `404 upstream-not-found`，本来就没有上游返回 `409 no-upstream`）；删除远端上的分支（`delete-remote`，即 `push --delete`）；校验分支名/远端名，失败返回 git 错误详情 |
+| `host/branch-action-handler.ts` | `POST /git-suite/branch-action`：本地分支的 `merge`/`rebase`/`rename`/`delete`；把当前分支与任意 commit-ish（`target`）合并，可选 `noFf`、`ffOnly`、`squash`、`noCommit`、`allowUnrelated`、`message`（填合并信息或勾选 `noCommit` 会隐含 `--no-ff`；冲突返回 `409 operation-conflict`，`--squash` 冲突返回 `409 merge-conflict`）；把当前分支变基到任意引用（`rebase-onto`，目标用 `rev-parse --verify` 解析，遇到冲突返回 `409 operation-conflict`）；以远端分支为起点检出为本地跟踪分支（`track`）：默认名已被无关本地分支占用时返回 `409 local-branch-exists`，带 `local`/`remote`/`upstream` 与一个可用的 `suggested` 名称；已有本地分支正好跟踪该远端引用时直接切换过去；显式传 `newName` 则按该名建跟踪分支；把本地分支改为跟踪另一条远端分支，或取消跟踪（`upstream`，即 `branch --set-upstream-to` / `--unset-upstream`，找不到远端分支返回 `404 upstream-not-found`，本来就没有上游返回 `409 no-upstream`）；删除远端上的分支（`delete-remote`，即 `push --delete`）；校验分支名/远端名，失败返回 git 错误详情 |
 | `host/dsh.ts` | 本插件使用的 DSH host 类型，包括 `webServer`、工作区、`directoryPicker`、`llm` 与 `agentDefaultModel` |
 | `host/http.ts` | JSON 响应、错误序列化、同源与私有头校验；`readJsonBody`（Content-Length/实际字节上限）与 `sendResponse`（已关闭响应保护） |
 | `host/forge-post.ts` | 写操作路由公共流程：私有头、POST、body 上限、超时、repository/remote/forge/token 解析与错误回写 |
@@ -201,6 +201,7 @@ LICENSE
 | `client/hooks/useWorkspace.ts` | 工作区状态、单文件 diff、暂存/取消暂存、提交动作与 AI 生成提交信息 |
 | `client/hooks/usePulls.ts` | PR 视图状态：受支持的远端与默认远端、开放中/已关闭/全部筛选、列表与详情请求、401 时的令牌对话框、检出后的刷新；只有 PR 视图可见时才请求 |
 | `client/components/PullsPane.tsx` | PR 页面：远端/筛选工具栏、虚拟列表、详情（描述、讨论、AI 审查、CI 状态、提交、文件与可切换布局的差异）、在浏览器打开、检出、合并、关闭/重新打开；当前分支已有 PR 时显示编号入口 |
+| `client/components/MergeCommitDialog.tsx` | 把单个提交合并到当前分支：默认（`--ff`）、`--no-ff`、`--ff-only`、`--squash`、`--no-commit`、`--allow-unrelated-histories`，以及可选的合并信息；冲突时关闭弹窗，交给冲突提示条继续/中止 |
 | `client/components/MergePullDialog.tsx` | 合并确认：合并方式、删除源分支、阻止合并/检查失败提示；Gitee 额外提供「审查通过」「测试通过」按钮 |
 | `client/components/DeletePullDialog.tsx` | GitLab MR 的危险删除确认，必须勾选不可恢复提示 |
 | `client/components/PullApprovalBadges.tsx` | Gitee 审查/测试状态徽章（未指派/待通过/部分通过/已通过） |
@@ -211,7 +212,7 @@ LICENSE
 | `client/components/AiReviewDialog.tsx` | AI 审查前询问上下文方式（临时检出/完整文件/仅 Diff） |
 | `client/components/CreatePullDialog.tsx` | 创建 PR 表单：源分支只读、目标分支下拉、标题/描述/草稿，跨仓库时提示 head/base 远端 |
 | `client/components/VirtualList.tsx` | 固定行高的窗口化列表组件：自管滚动容器、`ResizeObserver` 测量、可见切片 + overscan、上下占位高度、`resetKey` 回顶、`onReachEnd`、`onViewportChange`；PR 列表与提交列表都使用它 |
-| `client/components/` | 提交列表、提交行、路线图、提交历史工具栏（分支/远端/排序，右侧另有刷新按钮）、引用树（双击切换分支，分支/远端分组右侧「+」添加分支/远端）、可拖拽分割线、详情、设置弹窗（每页条数、可录制的打开快捷键、版本检查更新）、工作区/提交面板、第二行操作栏（Ant Design 5 风格 text 按钮：默认无边框无背景，悬停出现中性底色，按下时底色更重；「历史/提交」是带边框轨道的 `Switch`，保留文字标签，其余只保留图标 + tooltip：拉取/推送/获取、命令行、按平台命名的文件管理器，以及 `mode=apps` 探测到时的 VS Code）、仓库 + 菜单（克隆/选择）、添加/删除远端弹窗、编辑远端弹窗（名称 + 地址）、新建分支弹窗、`Dropdown`（可选搜索：搜索框在控件上，仓库下拉按名字过滤）、提交右键菜单（标签/分支/检出/拣选/反向提交/重置/最近操作）、标签右键菜单（检出）、贮藏右键菜单（应用/弹出/丢弃）、远端分支右键菜单（检出/合并/变基/拉取/删除）、提交列表的列显隐菜单、文件右键菜单（在文件资源管理器中显示）、`Spinner`（唯一的加载动画组件，配合 `useMinimumSpin` 保证转满三圈才消失，避免闪烁）、toast（`ToastHost` 只挂一次 + 模块级 `toast(text, kind)`，支持 info/error 两种样式）、`DiffView`（统一或左右分栏 diff：粘性新旧行号栏、增删着色、分批「显示更多」、行号拖选、hunk/行级操作；布局用图标按钮切换，偏好持久化为 `diffMode`）、可编辑的提交引用字段（实时解析）、`Button`/`DialogActions` 统一按钮（28px/12px）、错误与状态等展示组件 |
+| `client/components/` | 提交列表、提交行、路线图、提交历史工具栏（分支/远端/排序，右侧另有刷新按钮）、引用树（双击切换分支，分支/远端分组右侧「+」添加分支/远端）、可拖拽分割线、详情、设置弹窗（每页条数、可录制的打开快捷键、版本检查更新）、工作区/提交面板、第二行操作栏（Ant Design 5 风格 text 按钮：默认无边框无背景，悬停出现中性底色，按下时底色更重；「历史/提交」是带边框轨道的 `Switch`，保留文字标签，其余只保留图标 + tooltip：拉取/推送/获取、命令行、按平台命名的文件管理器，以及 `mode=apps` 探测到时的 VS Code）、仓库 + 菜单（克隆/选择）、添加/删除远端弹窗、编辑远端弹窗（名称 + 地址）、新建分支弹窗、`Dropdown`（可选搜索：搜索框在控件上，仓库下拉按名字过滤）、提交右键菜单（标签/分支/检出/合并/拣选/反向提交/重置/最近操作）、标签右键菜单（检出）、贮藏右键菜单（应用/弹出/丢弃）、远端分支右键菜单（检出/合并/变基/拉取/删除）、提交列表的列显隐菜单、文件右键菜单（在文件资源管理器中显示）、`Spinner`（唯一的加载动画组件，配合 `useMinimumSpin` 保证转满三圈才消失，避免闪烁）、toast（`ToastHost` 只挂一次 + 模块级 `toast(text, kind)`，支持 info/error 两种样式）、`DiffView`（统一或左右分栏 diff：粘性新旧行号栏、增删着色、分批「显示更多」、行号拖选、hunk/行级操作；布局用图标按钮切换，偏好持久化为 `diffMode`）、可编辑的提交引用字段（实时解析）、`Button`/`DialogActions` 统一按钮（28px/12px）、错误与状态等展示组件 |
 | `client/lib/api.ts` | 带私有头和 `AbortSignal` 的取数封装 |
 | `client/lib/graph.ts` | 泳道路由图布局与几何计算 |
 | `client/lib/patch.ts` | 把提交的合并补丁拆成每个文件一段，供文件列表切换 |
@@ -279,11 +280,12 @@ LICENSE
 
 ## 提交右键操作
 
-提交列表的每一行右键打开「标签 / 分支 / 检出 / 拣选 / 反向提交 / 重置 / 最近操作」菜单（`CommitActions`）：
+提交列表的每一行右键打开「标签 / 分支 / 检出 / 合并 / 拣选 / 反向提交 / 重置 / 最近操作」菜单（`CommitActions`）：
 
 - **标签** → `POST /git-suite/tag`（弹窗标题为「新建标签」）：`git check-ref-format refs/tags/<name>` 校验名称；`message` 非空时用 `git tag -a -m`，否则轻量标签；只有 `force: true`（勾选「覆盖同名标签」）才加 `-f`。它的提交字段预填右键选中的提交、可编辑，并像分支弹窗一样实时解析。
 - **分支** → `POST /git-suite/branch`：`git check-ref-format --branch` 校验后执行 `git branch <name> <起点>`。弹窗的「起点」预填右键选中的提交且可编辑；改成别的引用时会通过 `mode=resolve` 实时解析，并在输入框下方显示该提交的短哈希与标题；清空则回退到该提交。
 - **检出** → `POST /git-suite/checkout`：`branch` 走 `git switch <branch>`，`hash` 走 `git switch --detach <hash>`；不 force；工作区有会被覆盖的改动时返回 409 `worktree-dirty`。客户端在检出前显示确认弹窗，分离 HEAD 会明确警告，分支也会提示工作区改动风险。
+- **合并** 打开 `MergeCommitDialog`，POST `{ action: 'merge', target: <hash> }` 到 `/git-suite/branch-action`。弹窗显示目标提交与当前分支，并提供 Git 的合并开关：默认 `--ff`、`--no-ff`（始终创建合并提交）、`--ff-only`、`--squash`（只暂存结果，不提交）、`--no-commit`（提交前停止；会配合 `--no-ff`，避免快进跳过暂停）与 `--allow-unrelated-histories`；可选的合并信息同样隐含 `--no-ff`。分离 HEAD 会被拒绝（`409 detached-head`）。冲突停下时返回 `409 operation-conflict` 并关闭弹窗，由冲突提示条继续/中止；`--ff-only` 无法快进（`409 not-fast-forwardable`）、历史无关（`409 unrelated-histories`）、工作区会被覆盖（`409 worktree-dirty`）留在弹窗内报错。
 - **拣选** 执行 `git cherry-pick <hash>`，**反向提交** 执行 `git revert --no-edit <hash>`，都走 `POST /git-suite/commit-op`；冲突时返回 `409 operation-conflict`，弹窗提供「中止并恢复」（执行对应的 `--abort`）。
 - **重置** 弹窗可选 soft/mixed/hard 三种方式；hard 显示警告并使用危险按钮。
 - **最近操作** 读取 `mode=reflog`，可在旧提交上新建分支（默认名 `reflog-<短哈希>`），或勾选确认后硬重置到该提交。

@@ -100,6 +100,15 @@ export interface BranchActionPayload {
   newName?: string
   /** Remote-tracking ref a local branch now follows, or empty when it tracks nothing. */
   upstream?: string
+  /** Commit-ish merged by a `merge` with an explicit target, resolved to its hash. */
+  target?: string
+  /** HEAD after the action (unchanged for a stopped or squashed merge). */
+  head?: string
+  /** Merge options the host actually applied. */
+  noFf?: boolean
+  squash?: boolean
+  /** The merge prepared changes without creating a commit. */
+  stopped?: boolean
 }
 
 export interface PushTarget {

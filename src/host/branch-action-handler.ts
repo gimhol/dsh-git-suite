@@ -15,6 +15,22 @@ interface BranchActionBody {
   upstream?: unknown
   target?: unknown
   force?: unknown
+  /** Merge options; they only apply to a `merge` with an explicit commit-ish target. */
+  noFf?: unknown
+  ffOnly?: unknown
+  squash?: unknown
+  noCommit?: unknown
+  allowUnrelated?: unknown
+  message?: unknown
+}
+
+interface MergeOptions {
+  noFf: boolean
+  ffOnly: boolean
+  squash: boolean
+  noCommit: boolean
+  allowUnrelated: boolean
+  message: string
 }
 
 const MAX_BODY_BYTES = 16 * 1024
@@ -53,6 +69,94 @@ async function send(res: ServerResponse, response: Response): Promise<void> {
 
 function text(value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''
+}
+
+function outputOf(error: unknown): string {
+  const failed = error as { stdout?: string | Buffer; stderr?: string | Buffer } | null
+  const textOf = (value: string | Buffer | undefined): string => {
+    if (typeof value === 'string') return value
+    return value instanceof Buffer ? value.toString('utf8') : ''
+  }
+  // A conflicted squash merge writes its CONFLICT lines to stdout, while most
+  // other git failures use stderr; read both so the mapping is reliable.
+  return [textOf(failed?.stderr), textOf(failed?.stdout)].filter(part => part.trim() !== '').join('\n').trim()
+}
+
+/**
+ * Reads and validates the merge switches. `--no-commit` and a custom message
+ * only make sense when Git creates a merge commit, so both imply `--no-ff`
+ * (otherwise a possible fast-forward would silently skip them).
+ */
+function readMergeOptions(body: BranchActionBody): MergeOptions {
+  const noFf = body.noFf === true
+  const ffOnly = body.ffOnly === true
+  const squash = body.squash === true
+  const noCommit = body.noCommit === true
+  const allowUnrelated = body.allowUnrelated === true
+  const message = text(body.message)
+
+  if ((noFf && ffOnly) || (squash && (noFf || ffOnly)) || (ffOnly && noCommit)) {
+    throw new RouteError(400, 'invalid-merge-options', 'Those merge options cannot be combined.', {
+      noFf,
+      ffOnly,
+      squash,
+      noCommit,
+    })
+  }
+  if (message !== '' && (ffOnly || squash)) {
+    throw new RouteError(400, 'invalid-merge-options', 'A merge message only applies when Git creates a merge commit.', {
+      ffOnly,
+      squash,
+    })
+  }
+  if (message.length > 8_000) {
+    throw new RouteError(400, 'merge-message-too-long', 'The merge message is too long.', { length: message.length })
+  }
+
+  return {
+    noFf: noFf || message !== '' || (noCommit && !squash),
+    ffOnly,
+    squash,
+    noCommit: noCommit && !squash,
+    allowUnrelated,
+    message,
+  }
+}
+
+function mergeArguments(target: string, options: MergeOptions): string[] {
+  const args = ['merge']
+  if (options.noFf) args.push('--no-ff')
+  if (options.ffOnly) args.push('--ff-only')
+  if (options.squash) args.push('--squash')
+  if (options.noCommit) args.push('--no-commit')
+  if (options.allowUnrelated) args.push('--allow-unrelated-histories')
+  if (!options.squash) {
+    if (options.message === '') args.push('--no-edit')
+    else args.push('-m', options.message)
+  }
+  args.push(target)
+  return args
+}
+
+/** Map a failed `git merge` onto an actionable code when Git's wording allows it. */
+function mergeFailure(error: unknown, target: string): RouteError {
+  const output = outputOf(error)
+  const detail = output.slice(0, 1200)
+  if (/not possible to fast-forward/i.test(output)) {
+    return new RouteError(409, 'not-fast-forwardable', 'Git cannot fast-forward this merge; use the default or --no-ff mode.', { target, detail })
+  }
+  if (/refusing to merge unrelated histories/i.test(output)) {
+    return new RouteError(409, 'unrelated-histories', 'Those histories are unrelated; allow unrelated histories to merge them.', { target, detail })
+  }
+  if (/would be overwritten by merge|local changes.*would be overwritten|Please commit your changes or stash them/i.test(output)) {
+    return new RouteError(409, 'worktree-dirty', 'The working tree has changes that would be overwritten; commit or stash them first.', { target, detail })
+  }
+  // A --squash merge leaves conflicts in the working tree without MERGE_HEAD,
+  // so there is no in-progress operation for the conflict bar to report.
+  if (/CONFLICT \(|Automatic merge failed|fix conflicts and then commit/i.test(output)) {
+    return new RouteError(409, 'merge-conflict', 'The merge left conflicts in the working tree; resolve them and commit the result.', { target, detail })
+  }
+  return gitFailure(error).withDetails({ target })
 }
 
 /** Whether `refs/heads/<name>` exists. */
@@ -156,6 +260,52 @@ export function createBranchActionHandler(context: RouteContext): (req: Incoming
         }
         const head = (await runGit(repo.root, ['rev-parse', 'HEAD'], controller.signal)).trim()
         await send(res, json({ ok: true, action, branch: current, target, head }))
+        return
+      }
+
+      // Merging a commit (or any commit-ish) into the current branch. Branch
+      // merges keep the older `branch` path below, so existing callers that
+      // only name a local branch are unchanged.
+      if (action === 'merge' && text(body.target) !== '') {
+        const target = text(body.target)
+        if (target.startsWith('-') || target.includes('\0') || /[\r\n]/.test(target)) {
+          throw new RouteError(400, 'invalid-target', 'That merge target is not valid.', { target })
+        }
+        const options = readMergeOptions(body)
+        const current = (await runGit(repo.root, ['rev-parse', '--abbrev-ref', 'HEAD'], controller.signal)).trim()
+        if (current === 'HEAD') {
+          throw new RouteError(409, 'detached-head', 'Check out a branch before merging a commit.')
+        }
+        let resolved: string
+        try {
+          resolved = (await runGit(repo.root, ['rev-parse', '--verify', `${target}^{commit}`], controller.signal)).trim()
+        } catch {
+          throw new RouteError(404, 'unknown-target', 'That ref does not resolve to a commit.', { target })
+        }
+        try {
+          await runGit(repo.root, mergeArguments(resolved, options), controller.signal)
+        } catch (error) {
+          const operation = await detectOperation(repo.root, controller.signal)
+          if (operation !== null) {
+            throw new RouteError(409, 'operation-conflict', 'The merge stopped with conflicts.', {
+              operation,
+              target: resolved,
+              detail: outputOf(error).slice(0, 1200),
+            })
+          }
+          throw mergeFailure(error, resolved)
+        }
+        const head = (await runGit(repo.root, ['rev-parse', 'HEAD'], controller.signal)).trim()
+        await send(res, json({
+          ok: true,
+          action,
+          branch: current,
+          target: resolved,
+          head,
+          noFf: options.noFf,
+          squash: options.squash,
+          stopped: options.squash || options.noCommit,
+        }))
         return
       }
 

@@ -964,8 +964,20 @@ export interface BranchActionRequest {
   newName?: string
   /** `upstream` only: the remote-tracking ref to follow, or empty to stop tracking. */
   upstream?: string
-  /** ebase-onto only: any commit, tag, or branch to rebase onto. */
+  /** A commit-ish target: `merge` merges it, `rebase-onto` rebases onto it. */
   target?: string
+  /** Merge target only: always create a merge commit (`--no-ff`). */
+  noFf?: boolean
+  /** Merge target only: abort instead of creating a merge commit (`--ff-only`). */
+  ffOnly?: boolean
+  /** Merge target only: stage the result without committing (`--squash`). */
+  squash?: boolean
+  /** Merge target only: stop before committing (`--no-commit`, implies `--no-ff`). */
+  noCommit?: boolean
+  /** Merge target only: accept unrelated histories (`--allow-unrelated-histories`). */
+  allowUnrelated?: boolean
+  /** Merge target only: custom merge commit message; implies `--no-ff`. */
+  message?: string
   /** Delete only: force deletion even when the branch is not fully merged. */
   force?: boolean
 }
